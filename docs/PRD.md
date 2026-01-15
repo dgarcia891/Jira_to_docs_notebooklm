@@ -36,7 +36,9 @@ Product and engineering teams using NotebookLM for analysis must constantly re-e
 
 ### Feature 1: Jira DOM Extraction
 - **ID:** F-001
-- **Description:** robustly extract issue data (Key, Summary, Status, Desc, etc.) from the Jira Cloud DOM.
+- **Description:** robustly extract issue data from the Jira Cloud DOM.
+  - **Core Fields:** Key, Summary, Status, Type, Priority, Assignee.
+  - **Comments:** Extracts the **latest 5 visible comments** (Author + Body).
 - **Implementation:** Layered strategy (Data attributes -> Semantic fallbacks).
 - **Priority:** P0
 
@@ -52,9 +54,19 @@ Product and engineering teams using NotebookLM for analysis must constantly re-e
 
 ### Feature 4: Idempotent Section Sync
 - **ID:** F-004
-- **Description:** Intelligent sync that **updates existing sections** instead of appending. The extension searches the Doc for a header matching the Issue Key (e.g., `## PROJ-123: Summary`).
-  - **If found:** Replaces the content under that header up to the next header.
-  - **If not found:** Appends a new section at the end of the doc.
+- **Description:** Intelligent sync that **updates existing sections** instead of appending. The extension searches the Doc for a header matching the Issue Key.
+  - **Structure:**
+    ```markdown
+    ## PROJ-123: Summary
+    **Status:** In Progress | **Assignee:** Jane Doe
+    
+    ### Description
+    ...
+    
+    ### Latest Comments
+    - **User:** Comment text...
+    ```
+  - **Update Logic:** Replaces the *entire* section (Headers + Description + Comments). This automatically reflects new, edited, or deleted comments from the current DOM snapshot.
 - **Priority:** P0
 
 ## 6. Technical Architecture
