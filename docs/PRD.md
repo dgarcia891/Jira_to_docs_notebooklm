@@ -50,9 +50,11 @@ Product and engineering teams using NotebookLM for analysis must constantly re-e
 - **Description:** Button injected into Jira UI (or popup) to trigger sync. Pushes formatted content to the selected Google Doc.
 - **Priority:** P0
 
-### Feature 4: Stable Section Layout
+### Feature 4: Idempotent Section Sync
 - **ID:** F-004
-- **Description:** Consistent markdown/formatting in Google Doc (H2 per issue) to support idempotent updates and clean NotebookLM ingestion.
+- **Description:** Intelligent sync that **updates existing sections** instead of appending. The extension searches the Doc for a header matching the Issue Key (e.g., `## PROJ-123: Summary`).
+  - **If found:** Replaces the content under that header up to the next header.
+  - **If not found:** Appends a new section at the end of the doc.
 - **Priority:** P0
 
 ## 6. Technical Architecture
@@ -65,7 +67,10 @@ Product and engineering teams using NotebookLM for analysis must constantly re-e
 
 ### Key Decisions
 - **Auth:** `chrome.identity` + Google OAuth 2.0.
-- **Sync Model:** DOM Scraping -> Generic `WorkItem` Model -> Google Docs API (`batchUpdate`).
+- **Sync Logic:** 
+  1. Fetch Doc content.
+  2. Regex search for `^## {ISSUE_KEY}`.
+  3. **Range Replacement** (via `batchUpdate` `deleteContentRange` + `insertText`) to update in-place.
 - **Data Model:** Generic `WorkItem` interface to support future sources (Trello, GitHub).
 
 ## 7. Future Features (Post-MVP)
