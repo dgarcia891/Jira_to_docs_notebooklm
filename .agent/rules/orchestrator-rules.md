@@ -19,3 +19,7 @@
 12. KEEP context tight - reference specific files, not entire workspace
 13. SPAWN sub-agents rather than doing everything yourself
 14. USE Deep Think mode for complex problems only
+
+### 6. Version Control
+- **Always** bump the `version` in `package.json` and `manifest.json` for every change, including hotfixes.
+- Follow Semantic Versioning (PATCH for bug fixes, MINOR for features, MAJOR for breaking changes).
