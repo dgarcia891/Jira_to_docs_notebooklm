@@ -91,7 +91,7 @@ describe('Sync UI Bug Reproduction', () => {
 
         await waitFor(() => {
             expect(screen.getByText(/Error: Failed to find issue/i)).toBeDefined();
-            expect(screen.getByText(/Sync Now/i)).toBeDefined();
+            expect(screen.getByText(/Sync Individual/i)).toBeDefined();
         }, { timeout: 3000 });
     });
 });

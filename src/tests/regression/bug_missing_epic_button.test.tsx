@@ -69,7 +69,7 @@ describe('Bug Fix: Missing Epic Button', () => {
         expect(screen.getByText(/EPIC-123/i)).toBeDefined();
 
         // BUT the Epic button should be missing because 'type' was never received
-        expect(screen.queryByText(/Sync Epic & Children/i)).toBeNull();
+        expect(screen.queryByText(/Sync All/i)).toBeNull();
     });
 
     it('should show Epic button if keyData is an object with type "Epic" (desired behavior)', async () => {
@@ -85,7 +85,7 @@ describe('Bug Fix: Missing Epic Button', () => {
         });
 
         await waitFor(() => {
-            expect(screen.getByText(/Sync Epic & Children/i)).toBeDefined();
+            expect(screen.getByText(/Sync All/i)).toBeDefined();
         });
     });
 });

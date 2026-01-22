@@ -1,5 +1,11 @@
 # Changelog
 
+## [4.8.21] - 2026-01-22
+### Changed
+- **UI Refinement**: Redesigned the popup layout for better ergonomics.
+    - Sync buttons ("Sync Individual" and "Sync All") are now horizontally aligned and equal width.
+    - Simplified footer: "Change Link" and "Settings" are now consolidated as text links at the bottom.
+
 ## [4.8.20] - 2026-01-22
 ### Added
 - **Recursive Deep Context Sync**: Every linked issue now includes its **Full Description**, **Status**, and **All Comments**. This provides a much deeper layer of context for NotebookLM, allowing the AI to understand dependencies without navigation.

@@ -83,3 +83,12 @@ export const getEpicButtonStyle = (isPrimary: boolean) => ({
     color: '#0052CC',
     borderWidth: isPrimary ? '2px' : '1px',
 });
+export const textLinkStyle: React.CSSProperties = {
+    background: 'none',
+    border: 'none',
+    color: '#0052CC',
+    cursor: 'pointer',
+    fontSize: '12px',
+    textDecoration: 'underline',
+    padding: '4px 8px',
+};

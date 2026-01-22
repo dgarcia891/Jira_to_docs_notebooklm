@@ -167,7 +167,7 @@ const App: React.FC = () => {
         <div style={styles.containerStyle}>
 
             <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
-                <span style={{ fontSize: '10px', color: '#6B778C', fontWeight: 'bold' }}>v4.8.20</span>
+                <span style={{ fontSize: '10px', color: '#6B778C', fontWeight: 'bold' }}>v4.8.21</span>
                 <h2 style={{ fontSize: '18px', margin: 0, color: '#172B4D' }}>Jira Connector</h2>
                 <button onClick={auth.handleLogout} style={{ ...styles.secondaryButtonStyle, marginTop: 0, padding: '4px 8px' }}>Logout</button>
             </header>
@@ -178,8 +178,6 @@ const App: React.FC = () => {
                 getStatusColor={styles.getStatusColor}
                 onClose={() => updateStatus(null)}
             />
-
-
 
             {!jiraSync.currentIssueKey ? (
                 <div style={{ padding: '20px', background: '#DEEBFF', borderRadius: '8px', textAlign: 'center' }}>
@@ -271,48 +269,34 @@ const App: React.FC = () => {
                         <button
                             onClick={handleSync}
                             disabled={isSyncing}
-                            style={styles.buttonStyle}
+                            style={{ ...styles.buttonStyle, marginTop: 0, flex: 1 }}
                         >
-                            {isSyncing ? 'Syncing...' : 'Sync Now'}
+                            {isSyncing ? 'Syncing...' : 'Sync Individual'}
                         </button>
-                        <button
-                            onClick={() => setShowLinkingOptions(true)}
-                            style={styles.secondaryButtonStyle}
-                        >
-                            Change Link...
-                        </button>
+
+                        {jiraSync.isEpic && (
+                            <button
+                                onClick={handleEpicSync}
+                                disabled={isSyncing}
+                                style={{ ...styles.buttonStyle, marginTop: 0, flex: 1, backgroundColor: '#0065FF' }}
+                            >
+                                {isSyncing ? 'Syncing...' : 'Sync All'}
+                            </button>
+                        )}
                     </div>
 
-                    {jiraSync.isEpic && (
+                    <div style={{ marginTop: '30px', display: 'flex', justifyContent: 'center', gap: '15px', borderTop: '1px solid #EBECF0', paddingTop: '15px' }}>
                         <button
-                            onClick={handleEpicSync}
-                            disabled={isSyncing}
-                            style={{
-                                ...styles.secondaryButtonStyle,
-                                marginTop: '10px',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                gap: '8px'
-                            }}
+                            onClick={() => setShowLinkingOptions(true)}
+                            style={styles.textLinkStyle}
                         >
-                            <span>📦</span> {isSyncing ? 'Bulk Syncing...' : 'Sync Epic & Children'}
+                            Change Link
                         </button>
-                    )}
-
-                    <div style={{ marginTop: '20px', display: 'flex', justifyContent: 'center' }}>
                         <button
                             onClick={() => chrome.runtime.openOptionsPage()}
-                            style={{
-                                background: 'none',
-                                border: 'none',
-                                color: '#0052CC',
-                                cursor: 'pointer',
-                                fontSize: '12px',
-                                textDecoration: 'underline'
-                            }}
+                            style={styles.textLinkStyle}
                         >
-                            Open Settings
+                            Settings
                         </button>
                     </div>
                 </div>
