@@ -1,5 +1,10 @@
 # Changelog
 
+## [4.8.19] - 2026-01-22
+### Fixed
+- **Linked Issue Deduplication**: Linked tickets and subtasks are now deduplicated before display, ensuring a cleaner linked list in your synced documents.
+- **Smart Context Suppression**: When a linked ticket is already synchronized as a full section in the same document, its redundant "Rationale/Context" (based on its latest comment) is suppressed to prevent repetitive text in your NotebookLM source.
+
 ## [4.8.18] - 2026-01-22
 ### Changed
 - **Full Wipe & Replace Sync**: Completely refactored the sync engine to follow a "Nuclear Wipe" strategy. Every sync now clears the entire document before inserting gathered data. This eliminates all duplicate entry bugs and ensures your Google Doc is always a clean, up-to-date snapshot of your Jira tickets.

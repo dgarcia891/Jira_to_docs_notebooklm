@@ -136,10 +136,10 @@ export class JiraParser implements WorkItemParser {
         let linkedIssues: any[] = [];
         const links = f.issuelinks || [];
         const subtasks = f.subtasks || [];
-        const targetKeys = [
+        const targetKeys = Array.from(new Set([
             ...links.map((l: any) => (l.outwardIssue || l.inwardIssue)?.key),
             ...subtasks.map((st: any) => st.key)
-        ].filter(Boolean).slice(0, 10);
+        ].filter(Boolean))).slice(0, 10);
 
         if (targetKeys.length > 0) {
             linkedIssues = await Promise.all(targetKeys.map(k => api.fetchLinkedIssueDetails(k, fieldMap, this.getBaseUrl(), this.getAuthHeaders())));
