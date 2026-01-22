@@ -182,6 +182,18 @@ async function getIssueDocLinks(): Promise<Record<string, { id: string; name: st
     return normalized;
 }
 
+async function updateSyncState(state: {
+    isSyncing: boolean;
+    progress: number;
+    status: string;
+    key?: string;
+    result?: { status: string; message: string; time: number }
+}) {
+    await chrome.storage.local.set({ activeSyncState: state });
+    // Notify popup if it's open
+    chrome.runtime.sendMessage({ type: 'SYNC_STATE_UPDATE', payload: state }).catch(() => { });
+}
+
 async function handleSync() {
     try {
         const token = await authService.getToken();
@@ -190,6 +202,8 @@ async function handleSync() {
         // 1. Get active tab and extract issue
         const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
         if (!tab?.id) throw new Error('No active tab');
+
+        await updateSyncState({ isSyncing: true, progress: 10, status: 'Initializing...', key: 'pending' });
 
         const response = await chrome.tabs.sendMessage(tab.id, { type: 'EXTRACT_ISSUE' }) as ContentResponse;
         if (response.type === 'EXTRACT_ERROR') {
@@ -201,6 +215,8 @@ async function handleSync() {
         }
 
         const issueKey = response.payload.key;
+        await updateSyncState({ isSyncing: true, progress: 30, status: `Fetched ${issueKey}`, key: issueKey });
+
         const links = await getIssueDocLinks();
         let targetDoc: { id: string; name: string };
 
@@ -214,6 +230,8 @@ async function handleSync() {
             await chrome.storage.local.set({ issueDocLinks: links });
         }
 
+        await updateSyncState({ isSyncing: true, progress: 60, status: `Syncing ${issueKey} to Google Docs...`, key: issueKey });
+
         // 3. Sync
         await docsService.syncItem(targetDoc.id, response.payload, token);
         console.log(`Background: Sync successful for ${issueKey} to ${targetDoc.name}`);
@@ -221,17 +239,32 @@ async function handleSync() {
         // Persist Last Sync Result
         const data = await chrome.storage.local.get('issueSyncTimes');
         const issueSyncTimes = (data.issueSyncTimes || {}) as Record<string, { status: string; time: number; message?: string }>;
-        issueSyncTimes[issueKey] = {
+        const syncResult = {
             status: 'success',
             time: Date.now(),
             message: `Synced to ${targetDoc.name}`
         };
+        issueSyncTimes[issueKey] = syncResult;
+
         await chrome.storage.local.set({ issueSyncTimes, lastSyncType: 'single' });
+        await updateSyncState({
+            isSyncing: false,
+            progress: 100,
+            status: 'Complete!',
+            key: issueKey,
+            result: syncResult
+        });
 
         return { success: true, key: issueKey, id: targetDoc.id };
 
     } catch (err: any) {
         console.error('Background Sync Error:', err);
+        await updateSyncState({
+            isSyncing: false,
+            progress: 0,
+            status: `Error: ${err.message}`,
+            result: { status: 'error', message: err.message, time: Date.now() }
+        });
         throw err;
     }
 }
@@ -240,6 +273,8 @@ async function handleEpicSync(epicKey: string) {
     try {
         const token = await authService.getToken();
         if (!token) throw new Error('Google Docs not authenticated. Please disconnect and reconnect.');
+
+        await updateSyncState({ isSyncing: true, progress: 5, status: 'Initializing Bulk Sync...', key: epicKey });
 
         // 1. Determine destination doc
         const links = await getIssueDocLinks();
@@ -269,6 +304,8 @@ async function handleEpicSync(epicKey: string) {
         const issues = response.payload.items;
         console.log(`Background: Found ${issues.length} issues in Epic ${epicKey}`);
 
+        await updateSyncState({ isSyncing: true, progress: 60, status: `Gathered ${issues.length} items. Writing to Google Doc...`, key: epicKey });
+
         // 3. Sync all issues in one bulk operation (Wipe & Replace)
         await docsService.syncItems(targetDoc.id, issues, token);
 
@@ -283,17 +320,47 @@ async function handleEpicSync(epicKey: string) {
         // Persist Last Sync Result
         const data = await chrome.storage.local.get('issueSyncTimes');
         const issueSyncTimes = (data.issueSyncTimes || {}) as Record<string, { status: string; time: number; message?: string }>;
-        issueSyncTimes[epicKey] = {
+        const syncResult = {
             status: 'success',
             time: Date.now(),
             message: `Bulk synced ${issues.length} issues to ${targetDoc.name}`
         };
+        issueSyncTimes[epicKey] = syncResult;
         await chrome.storage.local.set({ issueSyncTimes, lastSyncType: 'bulk' });
+
+        await updateSyncState({
+            isSyncing: false,
+            progress: 100,
+            status: 'Bulk Sync Complete!',
+            key: epicKey,
+            result: syncResult
+        });
 
         return { success: true, count: issues.length, key: epicKey, id: targetDoc.id };
 
     } catch (err: any) {
         console.error('Background Epic Sync Error:', err);
+        await updateSyncState({
+            isSyncing: false,
+            progress: 0,
+            status: `Bulk Sync Error: ${err.message}`,
+            result: { status: 'error', message: err.message, time: Date.now() }
+        });
         throw err;
     }
 }
+
+// Update the listener to catch EPIC_BULK_PROGRESS and persist it
+chrome.runtime.onMessage.addListener((message: any) => {
+    if (message.type === 'EPIC_BULK_PROGRESS') {
+        const { current, total, key } = message.payload;
+        // Map 0-100 items to 5% - 60% progress
+        const calculatedProgress = 5 + Math.floor((current / total) * 55);
+        updateSyncState({
+            isSyncing: true,
+            progress: calculatedProgress,
+            status: `Processing ${key} (${current}/${total})...`,
+            key
+        });
+    }
+});

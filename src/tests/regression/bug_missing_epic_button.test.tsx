@@ -85,7 +85,9 @@ describe('Bug Fix: Missing Epic Button', () => {
         });
 
         await waitFor(() => {
-            expect(screen.getByText(/Sync All/i)).toBeDefined();
+            // Can be "Sync All" or "Syncing..."
+            const button = screen.queryByText(/Sync All/i) || screen.queryByText(/Syncing.../i);
+            expect(button).not.toBeNull();
         });
     });
 });

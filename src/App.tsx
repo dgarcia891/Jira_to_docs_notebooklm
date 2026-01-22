@@ -7,9 +7,20 @@ import { useJiraSync } from './hooks/useJiraSync';
 import { useSettings } from './hooks/useSettings';
 import * as styles from './styles/popup';
 
+import { ProgressBar } from './components/popup/ProgressBar';
+
+interface SyncState {
+    isSyncing: boolean;
+    progress: number;
+    status: string;
+    result?: { status: string; message: string; time: number };
+}
+
 const App: React.FC = () => {
     const [status, setStatus] = useState<{ text: string; type: 'info' | 'success' | 'error' | 'debug' } | null>(null);
     const [isSyncing, setIsSyncing] = useState(false);
+    const [syncProgress, setSyncProgress] = useState(0);
+    const [syncStatusText, setSyncStatusText] = useState('');
     const [showLinkingOptions, setShowLinkingOptions] = useState(false);
     const [activeTab, setActiveTab] = useState<'all' | 'folders'>('all');
     const [syncChildren, setSyncChildren] = useState(false);
@@ -20,33 +31,59 @@ const App: React.FC = () => {
     const noop = useCallback(() => { }, []);
     const auth = useAuth(drive.loadDocs, noop);
 
-    const STALE_SYNC_TIMEOUT = 60 * 60 * 1000; // 1 hour
-
     const updateStatus = useCallback((newStatus: { text: string; type: 'info' | 'success' | 'error' | 'debug' } | null) => {
         setStatus(newStatus);
     }, []);
 
-    const restoreSyncState = useCallback(async () => {
-        // ROLLBACK: No persistence
-    }, []);
+    const resumeSyncState = useCallback(async () => {
+        const result = await chrome.storage.local.get('activeSyncState');
+        const activeSyncState = result.activeSyncState as SyncState | undefined;
+        if (activeSyncState) {
+            setIsSyncing(activeSyncState.isSyncing);
+            setSyncProgress(activeSyncState.progress);
+            setSyncStatusText(activeSyncState.status);
+
+            if (!activeSyncState.isSyncing && activeSyncState.result) {
+                updateStatus({
+                    text: activeSyncState.result.message,
+                    type: activeSyncState.result.status as any
+                });
+                // Clear the state so it doesn't show again on next open unless a new sync starts
+                await chrome.storage.local.remove('activeSyncState');
+            }
+        }
+    }, [updateStatus]);
 
     useEffect(() => {
         auth.checkAuth();
         jiraSync.checkCurrentPageLink();
-        restoreSyncState();
+        resumeSyncState();
 
         const timer = setInterval(() => {
             if (jiraSync.currentIssueKey) jiraSync.refreshLastSync(jiraSync.currentIssueKey);
         }, 60000);
 
         const listener = (msg: any) => {
-            console.log('App: Received message:', msg.type);
-            if (msg.type === 'SYNC_COMPLETE') {
+            if (msg.type === 'SYNC_STATE_UPDATE') {
+                const state = msg.payload;
+                setIsSyncing(state.isSyncing);
+                setSyncProgress(state.progress);
+                setSyncStatusText(state.status);
+
+                if (!state.isSyncing && state.result) {
+                    setSyncProgress(0);
+                    updateStatus({
+                        text: state.result.message,
+                        type: state.result.status as any
+                    });
+                }
+            } else if (msg.type === 'SYNC_COMPLETE') {
                 setIsSyncing(false);
+                setSyncProgress(100);
                 updateStatus({ text: 'Sync Complete!', type: 'success' });
-                if (jiraSync.currentIssueKey) jiraSync.refreshLastSync(jiraSync.currentIssueKey);
             } else if (msg.type === 'SYNC_ERROR') {
                 setIsSyncing(false);
+                setSyncProgress(0);
                 updateStatus({ text: `Error: ${msg.payload.message}`, type: 'error' });
             }
         };
@@ -55,41 +92,37 @@ const App: React.FC = () => {
             chrome.runtime?.onMessage?.removeListener?.(listener);
             clearInterval(timer);
         };
-    }, [jiraSync.currentIssueKey, jiraSync.refreshLastSync, auth.checkAuth, restoreSyncState]);
+    }, [jiraSync.currentIssueKey, jiraSync.refreshLastSync, auth.checkAuth, resumeSyncState, updateStatus]);
 
     const handleSync = async () => {
         setIsSyncing(true);
-        updateStatus({ text: 'Syncing...', type: 'info' });
+        setSyncProgress(10);
+        setSyncStatusText('Initializing...');
         try {
-            const result = await chrome.runtime.sendMessage({ type: 'SYNC_CURRENT_PAGE' });
-            if (result.error) throw new Error(result.error);
-
-            setIsSyncing(false);
-            updateStatus({ text: 'Sync Complete!', type: 'success' });
-            if (jiraSync.currentIssueKey) jiraSync.refreshLastSync(jiraSync.currentIssueKey);
+            await chrome.runtime.sendMessage({ type: 'SYNC_CURRENT_PAGE' });
         } catch (err: any) {
-            updateStatus({ text: `Sync Error: ${err.message}`, type: 'error' });
+            // Error is handled by background update
+        } finally {
             setIsSyncing(false);
+            setSyncProgress(0);
         }
     };
 
     const handleEpicSync = async () => {
         if (!jiraSync.currentIssueKey) return;
         setIsSyncing(true);
-        updateStatus({ text: 'Syncing Epic & Children...', type: 'info' });
+        setSyncProgress(5);
+        setSyncStatusText('Starting Bulk Sync...');
         try {
-            const result = await chrome.runtime.sendMessage({
+            await chrome.runtime.sendMessage({
                 type: 'SYNC_EPIC',
                 payload: { epicKey: jiraSync.currentIssueKey }
             });
-            if (result.error) throw new Error(result.error);
-
-            setIsSyncing(false);
-            updateStatus({ text: `Bulk Sync Complete!`, type: 'success' });
-            if (jiraSync.currentIssueKey) jiraSync.refreshLastSync(jiraSync.currentIssueKey);
         } catch (err: any) {
-            updateStatus({ text: `Bulk Sync Error: ${err.message}`, type: 'error' });
+            // Error is handled by background update
+        } finally {
             setIsSyncing(false);
+            setSyncProgress(0);
         }
     };
 
@@ -167,7 +200,7 @@ const App: React.FC = () => {
         <div style={styles.containerStyle}>
 
             <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
-                <span style={{ fontSize: '10px', color: '#6B778C', fontWeight: 'bold' }}>v4.8.22</span>
+                <span style={{ fontSize: '10px', color: '#6B778C', fontWeight: 'bold' }}>v4.8.23</span>
                 <h2 style={{ fontSize: '18px', margin: 0, color: '#172B4D' }}>Jira Connector</h2>
                 <button onClick={auth.handleLogout} style={{ ...styles.secondaryButtonStyle, marginTop: 0, padding: '4px 8px' }}>Logout</button>
             </header>
@@ -178,6 +211,10 @@ const App: React.FC = () => {
                 getStatusColor={styles.getStatusColor}
                 onClose={() => updateStatus(null)}
             />
+
+            {(isSyncing || syncProgress > 0) && (
+                <ProgressBar progress={syncProgress} status={syncStatusText} />
+            )}
 
             {!jiraSync.currentIssueKey ? (
                 <div style={{ padding: '20px', background: '#DEEBFF', borderRadius: '8px', textAlign: 'center' }}>

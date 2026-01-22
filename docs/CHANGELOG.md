@@ -1,5 +1,12 @@
 # Changelog
 
+## [4.8.23] - 2026-01-22
+### Added
+- **Persistent Progressive Sync**: Implemented a robust progress tracking system that persists across extension popup closures.
+    - New animated **Progress Bar** component.
+    - Background state management ensures you always see the latest sync status when reopening the extension.
+    - Success/Error persistence: If a sync completes while you are away, the result is captured and shown immediately upon your return.
+
 ## [4.8.22] - 2026-01-22
 ### Changed
 - **Automated Clone Filtering**: The sync engine now automatically identifies and excludes Jira tickets linked via the "Cloners" relationship type. This removes historical noise and ensuring your synchronized Google Doc is focused solely on current, relevant work items for NotebookLM analysis.
