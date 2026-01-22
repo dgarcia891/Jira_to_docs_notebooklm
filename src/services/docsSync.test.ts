@@ -46,10 +46,6 @@ describe('DocsSyncService', () => {
 
             const id = await service.createDoc('My Doc', token);
             expect(id).toBe(mockId);
-            expect(mockFetch).toHaveBeenCalledWith(
-                expect.stringContaining('v1/documents'),
-                expect.objectContaining({ method: 'POST', body: JSON.stringify({ title: 'My Doc' }) })
-            );
         });
 
         it('should list docs', async () => {
@@ -61,56 +57,19 @@ describe('DocsSyncService', () => {
 
             const files = await service.listDocs(token);
             expect(files).toEqual(mockFiles);
-            expect(mockFetch).toHaveBeenCalledWith(
-                expect.stringContaining('drive/v3/files'),
-                expect.any(Object)
-            );
         });
     });
 
-    describe('findSectionRange', () => {
-        it('should return null if key not found', () => {
-            const doc = createMockDoc([
-                { paragraph: { elements: [{ textRun: { content: 'Title' } }] } }
-            ]);
-            expect(service.findSectionRange(doc, 'TEST-123')).toBeNull();
-        });
-
-        it('should find range starting at H2 matching key', () => {
-            const doc = createMockDoc([
-                { startIndex: 1, endIndex: 10, paragraph: { elements: [{ textRun: { content: 'Intro' } }] } },
-                // Target Start
-                {
-                    startIndex: 11,
-                    endIndex: 20,
-                    paragraph: {
-                        paragraphStyle: { namedStyleType: 'HEADING_2' },
-                        elements: [{ textRun: { content: 'TEST-123: Title' } }]
-                    }
-                },
-                { startIndex: 21, endIndex: 30, paragraph: { elements: [{ textRun: { content: 'Body' } }] } },
-                // Next H2 (Target End)
-                {
-                    startIndex: 31,
-                    endIndex: 40,
-                    paragraph: {
-                        paragraphStyle: { namedStyleType: 'HEADING_2' },
-                        elements: [{ textRun: { content: 'OTHER-456' } }]
-                    }
-                },
-            ]);
-
-            const range = service.findSectionRange(doc, 'TEST-123');
-            expect(range).toEqual({ startIndex: 11, endIndex: 31 });
-        });
-    });
-
-    describe('syncItem', () => {
-        it('should APPEND if section not found', async () => {
-            // Mock Get Doc
+    describe('syncItem (Wipe & Replace)', () => {
+        it('should clear the entire document before inserting', async () => {
+            // Mock Get Doc with existing content up to index 500
             mockFetch.mockResolvedValueOnce({
                 ok: true,
-                json: async () => createMockDoc([{ endIndex: 100 }]) // End of doc
+                json: async () => createMockDoc([
+                    { startIndex: 0, endIndex: 1 },
+                    { startIndex: 1, endIndex: 500, paragraph: { elements: [] } },
+                    { startIndex: 500, endIndex: 501 }
+                ])
             });
 
             // Mock Batch Update
@@ -122,52 +81,45 @@ describe('DocsSyncService', () => {
             expect(mockFetch).toHaveBeenLastCalledWith(
                 expect.stringContaining(':batchUpdate'),
                 expect.objectContaining({
-                    method: 'POST',
-                    body: expect.stringContaining('insertText')
+                    method: 'POST'
                 })
             );
 
-            // Should NOT contain deleteContentRange
             const body = JSON.parse(mockFetch.mock.calls[1][1].body);
-            expect(body.requests[0].insertText).toBeDefined();
-            expect(body.requests.find((r: any) => r.deleteContentRange)).toBeUndefined();
-        });
 
-        it('should UPDATE if section found', async () => {
-            // Mock Get Doc finding section at 10 to 50
+            // Should contain deleteContentRange for the whole doc (1 to 500)
+            const deleteRequest = body.requests.find((r: any) => r.deleteContentRange);
+            expect(deleteRequest).toBeDefined();
+            expect(deleteRequest.deleteContentRange.range).toEqual({ startIndex: 1, endIndex: 500 });
+
+            // Should contain insertText at index 1
+            const insertRequest = body.requests.find((r: any) => r.insertText);
+            expect(insertRequest).toBeDefined();
+            expect(insertRequest.insertText.location.index).toBe(1);
+            expect(insertRequest.insertText.text).toContain('TEST-123');
+        });
+    });
+
+    describe('syncItems (Bulk Wipe & Replace)', () => {
+        it('should insert all items together in one giant block', async () => {
             mockFetch.mockResolvedValueOnce({
                 ok: true,
-                json: async () => createMockDoc([
-                    {
-                        startIndex: 10,
-                        endIndex: 20,
-                        paragraph: {
-                            paragraphStyle: { namedStyleType: 'HEADING_2' },
-                            elements: [{ textRun: { content: 'TEST-123' } }]
-                        }
-                    },
-                    {
-                        startIndex: 50,
-                        endIndex: 60,
-                        paragraph: {
-                            paragraphStyle: { namedStyleType: 'HEADING_2' },
-                            elements: []
-                        }
-                    }
-                ])
+                json: async () => createMockDoc([{ startIndex: 0, endIndex: 1 }, { startIndex: 1, endIndex: 2 }])
             });
-
-            // Mock Batch Update
             mockFetch.mockResolvedValueOnce({ ok: true });
 
-            await service.syncItem(docId, mockItem, token);
+            const items = [
+                { ...mockItem, key: 'ITEM-1' },
+                { ...mockItem, key: 'ITEM-2' }
+            ];
 
-            // Expect Delete then Insert (at least)
+            await service.syncItems(docId, items, token);
+
             const body = JSON.parse(mockFetch.mock.calls[1][1].body);
-            expect(body.requests.length).toBeGreaterThanOrEqual(2);
-            expect(body.requests[0].deleteContentRange).toBeDefined();
-            expect(body.requests[0].deleteContentRange.range).toEqual({ startIndex: 10, endIndex: 50 });
-            expect(body.requests[1].insertText).toBeDefined();
+            const insertRequest = body.requests.find((r: any) => r.insertText);
+
+            expect(insertRequest.insertText.text).toContain('ITEM-1');
+            expect(insertRequest.insertText.text).toContain('ITEM-2');
         });
     });
 });

@@ -1,5 +1,10 @@
 # Changelog
 
+## [4.8.18] - 2026-01-22
+### Changed
+- **Full Wipe & Replace Sync**: Completely refactored the sync engine to follow a "Nuclear Wipe" strategy. Every sync now clears the entire document before inserting gathered data. This eliminates all duplicate entry bugs and ensures your Google Doc is always a clean, up-to-date snapshot of your Jira tickets.
+- **Bulk Epic Sync**: Optimized Epic syncing to gather all child tickets first and perform a single, efficient bulk insertion after clearing the document.
+
 ## [4.8.17] - 2026-01-22
 ### Changed
 - **Aggressive Sync Replacement**: Removed style restrictions from section detection. The sync service now identifies and replaces previous ticket entries regardless of whether they are formatted as Headings or Normal Text. This ensures a clean "full-replace" behavior and prevents duplicate entries even on manually edited documents.

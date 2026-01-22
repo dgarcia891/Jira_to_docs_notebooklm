@@ -269,26 +269,16 @@ async function handleEpicSync(epicKey: string) {
         const issues = response.payload.items;
         console.log(`Background: Found ${issues.length} issues in Epic ${epicKey}`);
 
-        // 3. Sync each issue
-        let count = 0;
+        // 3. Sync all issues in one bulk operation (Wipe & Replace)
+        await docsService.syncItems(targetDoc.id, issues, token);
+
+        // 4. Update links for all children
         for (const issue of issues) {
-            count++;
-            console.log(`Background: Syncing progress ${count}/${issues.length} - ${issue.key}`);
-
-            // Still send individual progress for UI
-            chrome.runtime.sendMessage({
-                type: 'EPIC_BULK_PROGRESS',
-                payload: { current: count, total: issues.length, key: issue.key, stage: 'Syncing' }
-            }).catch(() => { });
-
-            await docsService.syncItem(targetDoc.id, issue, token);
-
-            // Map child to same doc
             if (!links[issue.key]) {
                 links[issue.key] = targetDoc;
-                await chrome.storage.local.set({ issueDocLinks: links });
             }
         }
+        await chrome.storage.local.set({ issueDocLinks: links });
 
         // Persist Last Sync Result
         const data = await chrome.storage.local.get('issueSyncTimes');
@@ -296,11 +286,11 @@ async function handleEpicSync(epicKey: string) {
         issueSyncTimes[epicKey] = {
             status: 'success',
             time: Date.now(),
-            message: `Bulk synced ${count} issues to ${targetDoc.name}`
+            message: `Bulk synced ${issues.length} issues to ${targetDoc.name}`
         };
         await chrome.storage.local.set({ issueSyncTimes, lastSyncType: 'bulk' });
 
-        return { success: true, count, key: epicKey, id: targetDoc.id };
+        return { success: true, count: issues.length, key: epicKey, id: targetDoc.id };
 
     } catch (err: any) {
         console.error('Background Epic Sync Error:', err);
