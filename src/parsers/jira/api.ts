@@ -30,7 +30,8 @@ export async function fetchEpicChildren(epicKey: string, baseUrl: string, authHe
 
 export async function fetchLinkedIssueDetails(key: string, fieldMap: Record<string, string>, baseUrl: string, authHeaders: Record<string, string>): Promise<any> {
     try {
-        const res = await fetch(`${baseUrl}/rest/api/3/issue/${key}?fields=summary,comment,${fieldMap['t-shirt size'] || ''}`, {
+        const fields = ['summary', 'description', 'status', 'priority', 'comment', fieldMap['t-shirt size']].filter(Boolean).join(',');
+        const res = await fetch(`${baseUrl}/rest/api/3/issue/${key}?fields=${fields}`, {
             headers: { 'Accept': 'application/json', ...authHeaders }
         });
         if (!res.ok) return { key, title: 'Error fetching', url: `${baseUrl}/browse/${key}` };
@@ -40,15 +41,35 @@ export async function fetchLinkedIssueDetails(key: string, fieldMap: Record<stri
         const tsId = fieldMap['t-shirt size'];
         const tShirtSize = tsId ? (f[tsId]?.value || f[tsId]?.name || f[tsId] || '') : '';
 
-        const comments = f.comment?.comments || [];
-        const rationale = comments.length > 0
-            ? extractRationale(comments[comments.length - 1].body)
+        const description = f.description ? parseADF(f.description) : 'No description provided.';
+        const status = f.status?.name || 'Unknown';
+        const priority = f.priority?.name || 'Medium';
+
+        // Process ALL comments for the linked issue
+        const rawComments = f.comment?.comments || [];
+        const processedComments = rawComments.map((c: any) => {
+            let body = '';
+            try { body = parseADF(c.body); } catch (e) { body = String(c.body); }
+            return {
+                id: c.id,
+                author: c.author?.displayName || 'Unknown User',
+                body: body.trim(),
+                timestamp: c.created ? new Date(c.created).toLocaleString() : ''
+            };
+        }).reverse();
+
+        const rationale = processedComments.length > 0
+            ? extractRationale(rawComments[rawComments.length - 1].body)
             : 'No technical notes recorded.';
 
         return {
             id: key,
             key,
             title: f.summary || '',
+            description,
+            status,
+            priority,
+            comments: processedComments,
             tShirtSize,
             rationale,
             url: `${baseUrl}/browse/${key}`

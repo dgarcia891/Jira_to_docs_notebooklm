@@ -14,8 +14,12 @@ export interface LinkedIssue {
     id: string;
     key: string;
     title: string;
+    description?: string;
+    status?: string;
+    priority?: string;
+    comments?: Comment[];
     tShirtSize?: string;
-    rationale?: string; // Summary of rationale from comments
+    rationale?: string; // Standard summary fallback
     url: string;
 }
 

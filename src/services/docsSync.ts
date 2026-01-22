@@ -224,13 +224,17 @@ ${commentsList}
 
             let linkedIssuesContent = '';
             if (item.linkedIssues && item.linkedIssues.length > 0) {
-                const itemKeys = new Set(items.map(it => it.key));
                 linkedIssuesContent = `\nLinked Tickets:\n` +
                     item.linkedIssues.map(li => {
-                        const baseText = `* ${li.key}: ${li.title}\n  - T-Shirt: ${li.tShirtSize || 'N/A'}`;
-                        if (itemKeys.has(li.key)) return baseText;
-                        return `${baseText}\n  - Context: ${li.rationale || 'N/A'}`;
-                    }).join('\n');
+                        const commentsPart = (li.comments && li.comments.length > 0)
+                            ? `\n    Comments:\n    ` + li.comments.map(c => `[${c.timestamp}] ${c.author}: ${c.body}`).join('\n    ')
+                            : '';
+
+                        return `* ${li.key}: ${li.title}\n` +
+                            `  - Status: ${li.status || 'N/A'} | Priority: ${li.priority || 'N/A'}\n` +
+                            `  - Description: ${li.description || 'No description'}\n` +
+                            `  - Link: ${li.url}${commentsPart}`;
+                    }).join('\n\n');
             }
 
             const headerText = `${item.key}: ${item.title}\n`;

@@ -1,5 +1,12 @@
 # Changelog
 
+## [4.8.20] - 2026-01-22
+### Added
+- **Recursive Deep Context Sync**: Every linked issue now includes its **Full Description**, **Status**, and **All Comments**. This provides a much deeper layer of context for NotebookLM, allowing the AI to understand dependencies without navigation.
+### Changed
+- **Reverted Item Suppression**: Removed the logic that suppressed descriptions for already-synced items. Redundant data is now preserved as requested to ensure inclusive context for the AI.
+- **Removed Deduplication**: Linked keys are no longer deduplicated, ensuring all Jira relationships (Sub-tasks vs Links) are rendered exactly as they appear in the source.
+
 ## [4.8.19] - 2026-01-22
 ### Fixed
 - **Linked Issue Deduplication**: Linked tickets and subtasks are now deduplicated before display, ensuring a cleaner linked list in your synced documents.
