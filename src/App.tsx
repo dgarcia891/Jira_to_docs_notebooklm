@@ -167,7 +167,7 @@ const App: React.FC = () => {
         <div style={styles.containerStyle}>
 
             <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
-                <span style={{ fontSize: '10px', color: '#6B778C', fontWeight: 'bold' }}>v4.8.13</span>
+                <span style={{ fontSize: '10px', color: '#6B778C', fontWeight: 'bold' }}>v4.8.14</span>
                 <h2 style={{ fontSize: '18px', margin: 0, color: '#172B4D' }}>Jira Connector</h2>
                 <button onClick={auth.handleLogout} style={{ ...styles.secondaryButtonStyle, marginTop: 0, padding: '4px 8px' }}>Logout</button>
             </header>

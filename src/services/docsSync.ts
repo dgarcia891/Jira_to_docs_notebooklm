@@ -292,9 +292,10 @@ ${commentsList}
 
             const style = el.paragraph.paragraphStyle?.namedStyleType;
 
-            // SIMPLE MATCH: If header includes the key
+            // PRECISE MATCH: Key must be at the start followed by non-alphanumeric or end
+            const keyRegex = new RegExp('^' + key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '([^a-zA-Z0-9]|$)', 'i');
             const isHeader = style === 'HEADING_1' || style === 'HEADING_2';
-            if (isHeader && fullText.includes(key)) {
+            if (isHeader && keyRegex.test(fullText)) {
                 start = el.startIndex;
                 console.log(`DocsSync: Found section for ${key} at index ${start}`);
                 continue;

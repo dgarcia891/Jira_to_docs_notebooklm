@@ -1,5 +1,9 @@
 # Changelog
 
+## [4.8.14] - 2026-01-22
+### Fixed
+- **Precise Sync Replacement**: Implemented regex-based key matching in the Google Docs sync service. This fixes a critical bug where tickets with similar keys (e.g., TEST-1 and TEST-10) would collide, causing incorrect section replacements or duplicate entries.
+
 ## [4.8.13] - 2026-01-22
 ### Added
 - **Comment Divider**: Added a visual dashed separator between the ticket information and the comments section in the Google Doc sync to improve readability.
