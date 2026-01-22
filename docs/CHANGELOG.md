@@ -1,5 +1,13 @@
 # Changelog
 
+## [4.8.12] - 2026-01-22
+### Fixed
+- **Restored "Sync Epic" Button**: Fixed a bug where the background script was stripping out the issue type metadata, causing the "Sync Epic & Children" button to stay hidden. It now correctly forwards the full issue info to the popup.
+
+## [4.8.11] - 2026-01-22
+### Added
+- **Agile Parent Verification**: Backfilled regression tests for Epic child discovery logic to ensure cross-ticket relationship extraction (Parents/Children) is stable and functional.
+
 ## [4.8.10] - 2026-01-22
 ### Added
 - **Release Protocol Verification**: Implemented a functional `release.cjs` script and a corresponding regression test to ensure version consistency and changelog compliance before every deployment.

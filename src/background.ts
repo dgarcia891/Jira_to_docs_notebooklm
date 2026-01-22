@@ -117,7 +117,7 @@ async function handleMessage(message: BackgroundMessage) {
             try {
                 const response = await chrome.tabs.sendMessage(tab.id, { type: 'GET_ISSUE_KEY' }) as { key?: string; error?: string };
                 if (response.error) throw new Error(response.error);
-                return response.key;
+                return response;
             } catch (e) {
                 console.warn('Background: Content script not found on this page. This is normal if not on Jira.', e);
                 throw new Error('Please open the extension on a Jira issue page.');
