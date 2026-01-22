@@ -292,10 +292,10 @@ ${commentsList}
 
             const style = el.paragraph.paragraphStyle?.namedStyleType;
 
-            // PRECISE MATCH: Key must be at the start followed by non-alphanumeric or end
-            const keyRegex = new RegExp('^' + key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '([^a-zA-Z0-9]|$)', 'i');
-            const isHeader = style === 'HEADING_1' || style === 'HEADING_2';
-            if (isHeader && keyRegex.test(fullText)) {
+            // PRECISE MATCH: Key can be preceded by non-alphanumeric (like '[') and must be followed by non-alphanumeric or end
+            const escapedKey = key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            const keyRegex = new RegExp('(^|[^a-zA-Z0-9])' + escapedKey + '([^a-zA-Z0-9]|$)', 'i');
+            if (keyRegex.test(fullText)) {
                 start = el.startIndex;
                 console.log(`DocsSync: Found section for ${key} at index ${start}`);
                 continue;

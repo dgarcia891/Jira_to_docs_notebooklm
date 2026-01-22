@@ -1,5 +1,13 @@
 # Changelog
 
+## [4.8.17] - 2026-01-22
+### Changed
+- **Aggressive Sync Replacement**: Removed style restrictions from section detection. The sync service now identifies and replaces previous ticket entries regardless of whether they are formatted as Headings or Normal Text. This ensures a clean "full-replace" behavior and prevents duplicate entries even on manually edited documents.
+
+## [4.8.16] - 2026-01-22
+### Fixed
+- **Flexible Sync Matching**: Improved the section discovery logic to recognize keys wrapped in brackets or preceded by prefixes (e.g., `[ETBSC-1212]`). This prevents duplicate entries from being created when different Jira header formats are present in the same Google Doc.
+
 ## [4.8.15] - 2026-01-22
 ### Fixed
 - **Improved Background Stability**: Added specific error detection for extension lifecycle events. The extension now intelligently suggests a **Page Refresh** when communication with the Jira content script is interrupted due to an update.

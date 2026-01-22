@@ -31,6 +31,27 @@ describe('Bug: Sync Replace Logic', () => {
         expect(range).toBeNull();
     });
 
+    it('should match a key even if it has brackets like [TEST-1]', () => {
+        const mockDoc = {
+            body: {
+                content: [
+                    {
+                        startIndex: 1,
+                        endIndex: 20,
+                        paragraph: {
+                            elements: [{ textRun: { content: '[TEST-1]: Brackets Case\n' } }],
+                            paragraphStyle: { namedStyleType: 'HEADING_1' }
+                        }
+                    }
+                ]
+            }
+        };
+
+        const range = service.findSectionRange(mockDoc, 'TEST-1');
+        expect(range).not.toBeNull();
+        expect(range?.startIndex).toBe(1);
+    });
+
     it('should find the correct section for an exact key match even with title context', () => {
         const mockDoc = {
             body: {
@@ -50,5 +71,26 @@ describe('Bug: Sync Replace Logic', () => {
         const range = service.findSectionRange(mockDoc, 'TEST-1');
         expect(range).not.toBeNull();
         expect(range?.startIndex).toBe(1);
+    });
+
+    it('should find the section even if it is NORMAL_TEXT (Style-Agnostic)', () => {
+        const mockDoc = {
+            body: {
+                content: [
+                    {
+                        startIndex: 50,
+                        endIndex: 70,
+                        paragraph: {
+                            elements: [{ textRun: { content: 'TEST-99: Stray Ticket\n' } }],
+                            paragraphStyle: { namedStyleType: 'NORMAL_TEXT' }
+                        }
+                    }
+                ]
+            }
+        };
+
+        const range = service.findSectionRange(mockDoc, 'TEST-99');
+        expect(range).not.toBeNull();
+        expect(range?.startIndex).toBe(50);
     });
 });
