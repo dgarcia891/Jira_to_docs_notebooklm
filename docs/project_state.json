@@ -1,0 +1,28 @@
+{
+    "project_name": "Jira to NotebookLM Chrome Extension",
+    "version": "4.7.4",
+    "features": [
+        "Google OAuth2 Authentication (Interactive & Manual)",
+        "Sync Single Jira Issue to Google Doc",
+        "Sync Epic & All Child Issues (Recursive/Bulk)",
+        "Link Jira Issue to Specific Google Doc",
+        "Create New Google Doc from Extension",
+        "Folder Navigation for Doc Creation",
+        "Comment Sync support"
+    ],
+    "architecture": {
+        "type": "Chrome Extension (Manifest V3)",
+        "frontend": "React 19 + Vite",
+        "state": "chrome.storage.local",
+        "backend": "Google Apps Script / Direct REST API (Client-side)"
+    },
+    "known_limitations": [
+        "Epic Bulk Sync relies on active session cookies to fetch child data (Fragile)",
+        "DOM Scraping used for data extraction (Subject to breakage on Jira UI updates)",
+        "No server-side database; all mapping is local to the user's browser extension storage"
+    ],
+    "test_coverage": {
+        "framework": "Vitest",
+        "status": "Infrastructure present, tests exist for Parsers and Sync Services"
+    }
+}

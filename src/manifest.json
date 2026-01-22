@@ -1,7 +1,7 @@
 {
     "manifest_version": 3,
     "name": "Jira to NotebookLM Connector",
-    "version": "4.1.4",
+    "version": "4.8.10",
     "description": "One-click sync of Jira issues to Google Docs for NotebookLM analysis.",
     "permissions": [
         "activeTab",
@@ -38,6 +38,7 @@
         "client_id": "342225464153-dla0epo4rhkt8tlst7jeorqos3n1d1rf.apps.googleusercontent.com",
         "scopes": [
             "https://www.googleapis.com/auth/documents",
+            "https://www.googleapis.com/auth/drive",
             "https://www.googleapis.com/auth/userinfo.email"
         ]
     }

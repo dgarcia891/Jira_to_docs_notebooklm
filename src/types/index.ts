@@ -1,4 +1,5 @@
 export * from './parser';
+export * from './doc';
 export interface Comment {
     id: string;
     author: string;

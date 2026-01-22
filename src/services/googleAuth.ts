@@ -12,69 +12,91 @@ export const parseTokenFromUrl = (url: string): string | null => {
 };
 
 export class GoogleAuthService implements AuthService {
-    private clientId = '342225464153-i3qd0aru6fsna13sg2i0qmvtofnktgmb.apps.googleusercontent.com'; // v1.4.2 Web App Client
-    private get redirectUri() {
-        // We will strictly use the one WITHOUT a trailing slash for the request, 
-        // as Web Apps in GCP are very sensitive to it.
-        return chrome.identity.getRedirectURL().replace(/\/$/, '');
-    }
     private scopes = [
         'https://www.googleapis.com/auth/documents',
         'https://www.googleapis.com/auth/drive',
         'https://www.googleapis.com/auth/userinfo.email'
-    ].join(' ');
+    ];
+
+    // Fallback Client ID (Web Application type) - Used only if native auth fails
+    private clientId = '342225464153-i3qd0aru6fsna13sg2i0qmvtofnktgmb.apps.googleusercontent.com';
 
     private async fetchToken(interactive: boolean): Promise<string | null> {
-        const authUrl = new URL('https://accounts.google.com/o/oauth2/v2/auth');
-        authUrl.searchParams.set('client_id', this.clientId);
-        authUrl.searchParams.set('response_type', 'token');
-        authUrl.searchParams.set('redirect_uri', this.redirectUri);
-        authUrl.searchParams.set('scope', this.scopes);
+        console.log(`GoogleAuth: fetchToken called (interactive: ${interactive})`);
 
-        if (interactive) {
-            // Force account selection and consent screen for a clean switch
-            authUrl.searchParams.set('prompt', 'select_account consent');
-        }
-
-        console.log('OAuth Request URL:', authUrl.href);
-        console.log('Redirect URI being sent:', this.redirectUri);
-
-        try {
-            const responseUrl = await chrome.identity.launchWebAuthFlow({
-                url: authUrl.href,
-                interactive: interactive
-            });
-
-            if (!responseUrl) return null;
-
-            const token = parseTokenFromUrl(responseUrl);
-
-            if (token) {
-                // Cache token locally for future "silent" calls
-                await chrome.storage.local.set({ auth_token: token, token_expiry: Date.now() + 3500 * 1000 });
-                return token;
+        // 1. Try Native getAuthToken first
+        const nativeToken = await new Promise<string | null>((resolve) => {
+            if (typeof chrome === 'undefined' || !chrome.identity || !chrome.identity.getAuthToken) {
+                resolve(null);
+                return;
             }
-            return null;
-        } catch (err) {
-            if (interactive) throw err;
-            return null;
+            chrome.identity.getAuthToken({ interactive }, (token: any) => {
+                if (chrome.runtime?.lastError || !token) {
+                    console.warn('GoogleAuth: Native getAuthToken failed/returned nothing:', chrome.runtime?.lastError?.message || 'No token');
+                    resolve(null);
+                } else {
+                    resolve(token);
+                }
+            });
+        });
+
+        if (nativeToken) {
+            await chrome.storage.local.set({ auth_token: nativeToken, token_expiry: Date.now() + 3500 * 1000 });
+            return nativeToken;
         }
+
+        // 2. Fallback to launchWebAuthFlow if interactive AND native failed
+        if (interactive) {
+            console.log('GoogleAuth: Attempting Fallback launchWebAuthFlow...');
+            return new Promise((resolve) => {
+                const redirectUri = chrome.identity.getRedirectURL();
+                const authUrl = `https://accounts.google.com/o/oauth2/auth` +
+                    `?client_id=${this.clientId}` +
+                    `&response_type=token` +
+                    `&redirect_uri=${encodeURIComponent(redirectUri)}` +
+                    `&scope=${encodeURIComponent(this.scopes.join(' '))}` +
+                    `&prompt=consent`;
+
+                chrome.identity.launchWebAuthFlow({ url: authUrl, interactive: true }, (responseUrl) => {
+                    if (chrome.runtime?.lastError || !responseUrl) {
+                        console.error('GoogleAuth: Fallback Auth Failed:', chrome.runtime?.lastError?.message);
+                        resolve(null);
+                    } else {
+                        const token = parseTokenFromUrl(responseUrl);
+                        if (token) {
+                            chrome.storage.local.set({ auth_token: token, token_expiry: Date.now() + 3500 * 1000 });
+                        }
+                        resolve(token);
+                    }
+                });
+            });
+        }
+
+        return null;
     }
 
     async login(): Promise<string> {
         const token = await this.fetchToken(true);
-        if (!token) throw new Error('Authentication failed - No token returned');
+        if (!token) {
+            const lastError = (chrome.runtime as any)?.lastError?.message;
+            throw new Error(`Authentication failed: ${lastError || 'No token returned'}`);
+        }
         return token;
     }
 
     async getToken(): Promise<string | null> {
-        // Check cache first
-        const { auth_token, token_expiry } = await chrome.storage.local.get(['auth_token', 'token_expiry']) as { auth_token?: string, token_expiry?: number };
-        if (auth_token && token_expiry && Date.now() < token_expiry) {
-            return auth_token;
+        // 1. Check local storage first (The "Classic" Persistence)
+        const data = await chrome.storage.local.get(['auth_token', 'token_expiry']);
+        const token = data.auth_token as string | undefined;
+        const expiry = data.token_expiry as number | undefined;
+
+        if (token && expiry && expiry > Date.now()) {
+            console.log('GoogleAuth: Using valid cached token from storage.');
+            return token;
         }
 
-        // Try silent refresh
+        // 2. Local token missing or expired, try silent refresh via Native Auth
+        console.log('GoogleAuth: Storage token missing/expired. Attempting silent fetch...');
         return await this.fetchToken(false);
     }
 
@@ -91,14 +113,20 @@ export class GoogleAuthService implements AuthService {
     }
 
     async logout(): Promise<void> {
-        // Clear everything
+        // Clear local UI state
         await chrome.storage.local.remove(['auth_token', 'token_expiry', 'userInfo']);
 
-        // Force Chrome/Comet to forget the cached token so it doesn't auto-login
+        // Revoke/Remove cached token from Chrome Identity
         try {
-            const { auth_token } = await chrome.storage.local.get('auth_token') as { auth_token?: string };
-            if (auth_token) {
-                chrome.identity.removeCachedAuthToken({ token: auth_token }, () => { });
+            // We need to get the current token to remove it
+            const token = await this.getToken();
+            if (token) {
+                await new Promise<void>((resolve) => {
+                    chrome.identity.removeCachedAuthToken({ token }, () => resolve());
+                });
+
+                // Optional: Revoke usage if we really want to disconnect app permissions
+                // await fetch('https://accounts.google.com/o/oauth2/revoke?token=' + token);
             }
         } catch (e) { }
 

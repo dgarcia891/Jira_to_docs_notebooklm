@@ -119,51 +119,50 @@ export class DocsSyncService {
         const doc = await this.getDoc(docId, token);
         const existingRange = this.findSectionRange(doc, item.key);
 
-        console.log('DocsSyncService: Syncing item', item.key, 'with', item.comments?.length || 0, 'comments');
+        console.log('DocsSyncService: Syncing item', item.key);
 
         const checkmark = item.status.toLowerCase() === 'done' ? '✅' : '⏳';
+        // HTML Clean the comments to simple text
         const commentsList = item.comments && item.comments.length > 0
-            ? item.comments.map(c => `- **[${c.timestamp || 'Unknown'}] ${c.author}:** ${c.body}`).join('\n')
+            ? item.comments.map(c => `[${c.timestamp || 'Unknown'}] ${c.author}: ${c.body.replace(/\*\*/g, '')}`).join('\n')
             : '_No recent comments_';
 
-        // v4.0 Full Metadata Block
+        // Clean Metadata (No Markdown)
         const metadataBlock = [
-            `**Status:** ${item.status}`,
-            `**Reporter:** ${item.reporter || 'N/A'}`,
-            `**Assignee:** ${item.assignee || 'Unassigned'}`,
-            `**Sprint History:** ${item.sprints && item.sprints.length > 0 ? item.sprints.join(', ') : 'No Sprints'}`,
-            `**T-Shirt Size:** ${item.tShirtSize || 'N/A'}`,
-            `**Work Type:** ${item.workType || 'N/A'}`,
-            `**Business Team:** ${item.businessTeam || 'N/A'}`,
-            `**Business Objective:** ${item.businessObjective || 'N/A'}`,
-            `**Impact:** ${item.impact || 'N/A'}`,
-            `**Labels:** ${item.labels && item.labels.length > 0 ? item.labels.join(', ') : 'None'}`,
-            `**Created:** ${item.createdDate ? new Date(item.createdDate).toLocaleString() : 'N/A'} | **Updated:** ${item.updatedDate ? new Date(item.updatedDate).toLocaleString() : 'N/A'}`
+            `Status: ${item.status}`,
+            `Reporter: ${item.reporter || 'N/A'}`,
+            `Assignee: ${item.assignee || 'Unassigned'}`,
+            `Sprint History: ${item.sprints && item.sprints.length > 0 ? item.sprints.join(', ') : 'No Sprints'}`,
+            `T-Shirt Size: ${item.tShirtSize || 'N/A'}`,
+            `Work Type: ${item.workType || 'N/A'}`,
+            `Business Team: ${item.businessTeam || 'N/A'}`,
+            `Business Objective: ${item.businessObjective || 'N/A'}`,
+            `Impact: ${item.impact || 'N/A'}`,
+            `Labels: ${item.labels && item.labels.length > 0 ? item.labels.join(', ') : 'None'}`,
+            `Synced: ${new Date().toLocaleString()}`,
+            `Created: ${item.createdDate ? new Date(item.createdDate).toLocaleString() : 'N/A'} | Updated: ${item.updatedDate ? new Date(item.updatedDate).toLocaleString() : 'N/A'}`
         ].join('\n');
 
-        // v4.0 Linked Ticket Context
         let linkedIssuesContent = '';
         if (item.linkedIssues && item.linkedIssues.length > 0) {
-            linkedIssuesContent = `\n### Linked Ticket Context\n` +
+            linkedIssuesContent = `\nLinked Tickets:\n` +
                 item.linkedIssues.map(li =>
-                    `* **${li.key}: ${li.title}**\n` +
-                    `  - **T-Shirt Size:** ${li.tShirtSize || 'N/A'}\n` +
-                    `  - **Context:** ${li.rationale || 'N/A'}\n` +
-                    `  - [View in Jira](${li.url})`
+                    `* ${li.key}: ${li.title}\n` +
+                    `  - T-Shirt: ${li.tShirtSize || 'N/A'}\n` +
+                    `  - Context: ${li.rationale || 'N/A'}`
                 ).join('\n');
         }
 
-        // Pure text content
         const headerText = `${item.key}: ${item.title}`;
-        const newContent = `${headerText}
-${metadataBlock}
-**Link:** ${item.url}
+        // Clean Body Content (No Markdown Headers/Bold)
+        const bodyContent = `${metadataBlock}
+Link: ${item.url}
 
-### Description
+Description
 ${item.description}
 ${linkedIssuesContent}
 
-### Latest Comments
+Latest Comments
 ${commentsList}
 
 ---
@@ -173,7 +172,7 @@ ${commentsList}
         let insertIndex: number;
 
         if (existingRange) {
-            // 2. Prepare Update (Delete then Insert)
+            // Update: Delete existing range
             insertIndex = existingRange.startIndex;
             syncRequests.push({
                 deleteContentRange: {
@@ -184,7 +183,7 @@ ${commentsList}
                 },
             });
         } else {
-            // 2. Prepare Append (Insert at end)
+            // Append: Find end of doc
             insertIndex = doc.body.content[doc.body.content.length - 1].endIndex - 1;
             syncRequests.push({
                 insertText: {
@@ -192,26 +191,48 @@ ${commentsList}
                     text: '\n',
                 },
             });
-            insertIndex += 1; // Content starts after the newline
+            insertIndex += 1;
         }
 
-        // Add main content
+        // 1. Insert Header Text (Title)
         syncRequests.push({
             insertText: {
                 location: { index: insertIndex },
-                text: newContent,
+                text: headerText + '\n',
             },
         });
 
-        // 3. Apply Styling (HEADING_2 to the header line)
-        const titleLineLength = headerText.length;
+        // 2. Style Header as HEADING_1 (Rollback from H2 for better outline)
         syncRequests.push({
             updateParagraphStyle: {
                 range: {
                     startIndex: insertIndex,
-                    endIndex: insertIndex + titleLineLength,
+                    endIndex: insertIndex + headerText.length,
                 },
-                paragraphStyle: { namedStyleType: 'HEADING_2' },
+                paragraphStyle: { namedStyleType: 'HEADING_1' },
+                fields: 'namedStyleType',
+            },
+        });
+
+        // Move index past header
+        insertIndex += headerText.length + 1;
+
+        // 3. Insert Body Text
+        syncRequests.push({
+            insertText: {
+                location: { index: insertIndex },
+                text: bodyContent,
+            },
+        });
+
+        // 4. Style Body as NORMAL_TEXT to ensure clean fallback
+        syncRequests.push({
+            updateParagraphStyle: {
+                range: {
+                    startIndex: insertIndex,
+                    endIndex: insertIndex + bodyContent.length,
+                },
+                paragraphStyle: { namedStyleType: 'NORMAL_TEXT' },
                 fields: 'namedStyleType',
             },
         });
@@ -262,18 +283,17 @@ ${commentsList}
             if (!el.paragraph) continue;
 
             // Join all text runs in the paragraph to handle partial styles/links
-            const fullText = el.paragraph.elements
+            const elements = el.paragraph.elements || [];
+            const fullText = elements
                 .map((e: any) => e.textRun?.content || '')
                 .join('')
                 .trim();
 
-            const isH2 = el.paragraph.paragraphStyle?.namedStyleType === 'HEADING_2';
+            const style = el.paragraph.paragraphStyle?.namedStyleType;
 
-            // PREFIX-AGNOSTIC MATCH
-            // Strip any leading punctuation/markdown like "## " or "**" or "ID: "
-            const cleanText = fullText.replace(/^[^a-zA-Z0-9]+/, '').trim();
-
-            if (cleanText.startsWith(key)) {
+            // SIMPLE MATCH: If header includes the key
+            const isHeader = style === 'HEADING_1' || style === 'HEADING_2';
+            if (isHeader && fullText.includes(key)) {
                 start = el.startIndex;
                 console.log(`DocsSync: Found section for ${key} at index ${start}`);
                 continue;

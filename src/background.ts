@@ -1,6 +1,10 @@
 import { GoogleAuthService, parseTokenFromUrl } from './services/googleAuth';
 import { DocsSyncService } from './services/docsSync';
+import { JiraParser } from './parsers/jira';
 import { BackgroundMessage, ContentResponse } from './types/messages';
+import { normalizeDoc } from './utils/docUtils';
+
+const jiraParser = new JiraParser();
 
 console.log('Jira to NotebookLM: Background service worker loaded');
 
@@ -77,6 +81,7 @@ chrome.runtime.onMessage.addListener((message: BackgroundMessage, sender, sendRe
 async function handleMessage(message: BackgroundMessage) {
     switch (message.type) {
         case 'LOGIN':
+            console.log('Background: Triggering LOGIN flow...');
             return await authService.login();
 
         case 'CHECK_AUTH':
@@ -108,15 +113,20 @@ async function handleMessage(message: BackgroundMessage) {
 
         case 'GET_CURRENT_ISSUE_KEY': {
             const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-            if (!tab?.id) throw new Error('No active tab');
-            const response = await chrome.tabs.sendMessage(tab.id, { type: 'GET_ISSUE_KEY' }) as { key?: string; error?: string };
-            if (response.error) throw new Error(response.error);
-            return response.key;
+            if (!tab?.id) throw new Error('No active tab found.');
+            try {
+                const response = await chrome.tabs.sendMessage(tab.id, { type: 'GET_ISSUE_KEY' }) as { key?: string; error?: string };
+                if (response.error) throw new Error(response.error);
+                return response.key;
+            } catch (e) {
+                console.warn('Background: Content script not found on this page. This is normal if not on Jira.', e);
+                throw new Error('Please open the extension on a Jira issue page.');
+            }
         }
 
         case 'GET_SELECTED_DOC': {
             const result = await chrome.storage.local.get('selectedDoc');
-            return result.selectedDoc || null;
+            return normalizeDoc(result.selectedDoc);
         }
 
         case 'SET_SELECTED_DOC': {
@@ -126,6 +136,9 @@ async function handleMessage(message: BackgroundMessage) {
 
         case 'SYNC_CURRENT_PAGE':
             return await handleSync();
+
+        case 'SYNC_EPIC':
+            return await handleEpicSync(message.payload.epicKey);
 
         case 'GET_ISSUE_DOC_LINK': {
             const { issueKey } = message.payload;
@@ -141,54 +154,152 @@ async function handleMessage(message: BackgroundMessage) {
             return true;
         }
 
+        case 'GET_LAST_SYNC': {
+            const { issueKey } = message.payload;
+            const data = await chrome.storage.local.get('issueSyncTimes');
+            const syncTimes = (data.issueSyncTimes || {}) as Record<string, any>;
+            return syncTimes[issueKey] || null;
+        }
         case 'LOGOUT':
             return await authService.logout();
     }
 }
 
-async function getIssueDocLinks(): Promise<Record<string, { docId: string; name: string }>> {
+async function getIssueDocLinks(): Promise<Record<string, { id: string; name: string }>> {
     const result = await chrome.storage.local.get('issueDocLinks');
-    return (result.issueDocLinks || {}) as Record<string, { docId: string; name: string }>;
+    const links = (result.issueDocLinks || {}) as Record<string, any>;
+
+    // Normalize all links on retrieval
+    const normalized: Record<string, { id: string; name: string }> = {};
+    for (const key in links) {
+        const doc = normalizeDoc(links[key]);
+        if (doc) normalized[key] = doc;
+    }
+    return normalized;
 }
 
 async function handleSync() {
-    const token = await authService.getToken();
-    if (!token) throw new Error('Not authenticated');
+    try {
+        const token = await authService.getToken();
+        if (!token) throw new Error('Not authenticated');
 
-    // 1. Get active tab and extract issue first to get key
-    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-    if (!tab?.id) throw new Error('No active tab');
+        // 1. Get active tab and extract issue
+        const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+        if (!tab?.id) throw new Error('No active tab');
 
-    const response = await chrome.tabs.sendMessage(tab.id, { type: 'EXTRACT_ISSUE' }) as ContentResponse;
-    if (response.type === 'EXTRACT_ERROR') {
-        throw new Error(response.error);
+        const response = await chrome.tabs.sendMessage(tab.id, { type: 'EXTRACT_ISSUE' }) as ContentResponse;
+        if (response.type === 'EXTRACT_ERROR') {
+            throw new Error(response.error);
+        }
+
+        if (response.type !== 'EXTRACT_SUCCESS') {
+            throw new Error('Unexpected response type from content script');
+        }
+
+        const issueKey = response.payload.key;
+        const links = await getIssueDocLinks();
+        let targetDoc: { id: string; name: string };
+
+        if (links[issueKey]) {
+            targetDoc = links[issueKey];
+        } else {
+            const { selectedDoc } = await chrome.storage.local.get('selectedDoc') as { selectedDoc?: { id: string; name: string } };
+            if (!selectedDoc) throw new Error('No target Document selected. Select one to link this issue.');
+            targetDoc = selectedDoc;
+            links[issueKey] = targetDoc;
+            await chrome.storage.local.set({ issueDocLinks: links });
+        }
+
+        // 3. Sync
+        await docsService.syncItem(targetDoc.id, response.payload, token);
+        console.log(`Background: Sync successful for ${issueKey} to ${targetDoc.name}`);
+
+        // Persist Last Sync Result
+        const data = await chrome.storage.local.get('issueSyncTimes');
+        const issueSyncTimes = (data.issueSyncTimes || {}) as Record<string, { status: string; time: number; message?: string }>;
+        issueSyncTimes[issueKey] = {
+            status: 'success',
+            time: Date.now(),
+            message: `Synced to ${targetDoc.name}`
+        };
+        await chrome.storage.local.set({ issueSyncTimes, lastSyncType: 'single' });
+
+        return { success: true, key: issueKey, id: targetDoc.id };
+
+    } catch (err: any) {
+        console.error('Background Sync Error:', err);
+        throw err;
     }
+}
 
-    const issueKey = response.payload.key;
-    const links = await getIssueDocLinks();
+async function handleEpicSync(epicKey: string) {
+    try {
+        const token = await authService.getToken();
+        if (!token) throw new Error('Google Docs not authenticated. Please disconnect and reconnect.');
 
-    // 2. Check for existing link
-    let targetDoc: { docId: string; name: string };
+        // 1. Determine destination doc
+        const links = await getIssueDocLinks();
+        let targetDoc = links[epicKey];
 
-    if (links[issueKey]) {
-        // Use existing linked doc
-        targetDoc = links[issueKey];
-    } else {
-        // No link exists, use currently selected doc and create link
-        const { selectedDoc } = await chrome.storage.local.get('selectedDoc') as { selectedDoc?: { docId: string; name: string } };
-        if (!selectedDoc) throw new Error('No target Document selected. Select one to link this issue.');
+        if (!targetDoc) {
+            const result = await chrome.storage.local.get('selectedDoc');
+            const selectedDoc = result.selectedDoc as { id: string; name: string } | undefined;
+            if (!selectedDoc) throw new Error('No target Document selected. Link the Epic first.');
+            targetDoc = selectedDoc;
+            links[epicKey] = targetDoc;
+            await chrome.storage.local.set({ issueDocLinks: links });
+        }
 
-        targetDoc = selectedDoc;
-        links[issueKey] = targetDoc;
-        await chrome.storage.local.set({ issueDocLinks: links });
+        // 2. Ask content script to fetch all Epic data
+        const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+        if (!tab?.id) throw new Error('No active tab');
+
+        const response = await chrome.tabs.sendMessage(tab.id, {
+            type: 'FETCH_EPIC_BULK',
+            payload: { epicKey }
+        }) as ContentResponse;
+
+        if (response.type === 'EXTRACT_ERROR') throw new Error(response.error);
+        if (response.type !== 'EPIC_BULK_SUCCESS') throw new Error('Expected EPIC_BULK_SUCCESS');
+
+        const issues = response.payload.items;
+        console.log(`Background: Found ${issues.length} issues in Epic ${epicKey}`);
+
+        // 3. Sync each issue
+        let count = 0;
+        for (const issue of issues) {
+            count++;
+            console.log(`Background: Syncing progress ${count}/${issues.length} - ${issue.key}`);
+
+            // Still send individual progress for UI
+            chrome.runtime.sendMessage({
+                type: 'EPIC_BULK_PROGRESS',
+                payload: { current: count, total: issues.length, key: issue.key, stage: 'Syncing' }
+            }).catch(() => { });
+
+            await docsService.syncItem(targetDoc.id, issue, token);
+
+            // Map child to same doc
+            if (!links[issue.key]) {
+                links[issue.key] = targetDoc;
+                await chrome.storage.local.set({ issueDocLinks: links });
+            }
+        }
+
+        // Persist Last Sync Result
+        const data = await chrome.storage.local.get('issueSyncTimes');
+        const issueSyncTimes = (data.issueSyncTimes || {}) as Record<string, { status: string; time: number; message?: string }>;
+        issueSyncTimes[epicKey] = {
+            status: 'success',
+            time: Date.now(),
+            message: `Bulk synced ${count} issues to ${targetDoc.name}`
+        };
+        await chrome.storage.local.set({ issueSyncTimes, lastSyncType: 'bulk' });
+
+        return { success: true, count, key: epicKey, id: targetDoc.id };
+
+    } catch (err: any) {
+        console.error('Background Epic Sync Error:', err);
+        throw err;
     }
-
-    // 3. Sync to the determined doc
-    await docsService.syncItem(targetDoc.docId, response.payload, token);
-
-    return {
-        key: issueKey,
-        linkedTo: targetDoc.name,
-        commentsCount: response.payload.comments?.length || 0
-    };
 }

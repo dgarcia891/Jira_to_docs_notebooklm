@@ -1,0 +1,144 @@
+import { Comment } from '../../types';
+import { parseADF } from './adf';
+import { cleanCommentBody } from './utils';
+
+export async function fetchEpicChildren(epicKey: string, baseUrl: string, authHeaders: Record<string, string>): Promise<string[]> {
+    console.log(`JiraParser: Discovering children for Epic ${epicKey}...`);
+    const res = await fetch(`${baseUrl}/rest/api/3/search/jql`, {
+        method: 'POST',
+        headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+            'X-Atlassian-Token': 'no-check',
+            'X-Requested-With': 'XMLHttpRequest',
+            ...authHeaders
+        },
+        body: JSON.stringify({
+            jql: `"parent" = ${epicKey} OR "Epic Link" = ${epicKey} order by created ASC`,
+            fields: ['key'],
+            maxResults: 100
+        })
+    });
+
+    if (!res.ok) {
+        const errorText = await res.text().catch(() => 'Unknown error');
+        throw new Error(`Failed to fetch epic children for ${epicKey} (${res.status}): ${errorText}`);
+    }
+    const data = await res.json();
+    return data.issues.map((i: any) => i.key);
+}
+
+export async function fetchLinkedIssueDetails(key: string, fieldMap: Record<string, string>, baseUrl: string, authHeaders: Record<string, string>): Promise<any> {
+    try {
+        const res = await fetch(`${baseUrl}/rest/api/3/issue/${key}?fields=summary,comment,${fieldMap['t-shirt size'] || ''}`, {
+            headers: { 'Accept': 'application/json', ...authHeaders }
+        });
+        if (!res.ok) return { key, title: 'Error fetching', url: `${baseUrl}/browse/${key}` };
+        const issue = await res.json();
+        const f = issue.fields || {};
+
+        const tsId = fieldMap['t-shirt size'];
+        const tShirtSize = tsId ? (f[tsId]?.value || f[tsId]?.name || f[tsId] || '') : '';
+
+        const comments = f.comment?.comments || [];
+        const rationale = comments.length > 0
+            ? extractRationale(comments[comments.length - 1].body)
+            : 'No technical notes recorded.';
+
+        return {
+            id: key,
+            key,
+            title: f.summary || '',
+            tShirtSize,
+            rationale,
+            url: `${baseUrl}/browse/${key}`
+        };
+    } catch (e) {
+        return { key, title: 'Network Error', url: `${baseUrl}/browse/${key}` };
+    }
+}
+
+export function extractRationale(body: any): string {
+    const text = parseADF(body);
+    const lines = text.split('\n').filter(l => l.trim().length > 0);
+    return lines.slice(0, 2).join(' ') + (lines.length > 2 ? '...' : '');
+}
+
+export async function extractComments(baseUrl: string, authHeaders: Record<string, string>, document: Document, issueKey?: string): Promise<Comment[]> {
+    if (!issueKey) return [];
+
+    try {
+        console.log(`JiraParser: Fetching comments for ${issueKey} via API...`);
+        const response = await fetch(`${baseUrl}/rest/api/3/issue/${issueKey}/comment?expand=renderedBody`, {
+            method: 'GET',
+            headers: {
+                'Accept': 'application/json',
+                ...authHeaders
+            }
+        });
+
+        if (!response.ok) {
+            console.error(`JiraParser: API Error ${response.status} ${response.statusText}`);
+            if (response.status === 401 || response.status === 403) {
+                return [{
+                    id: 'error-auth',
+                    author: 'System',
+                    body: 'Error: Could not access Jira API. Please ensure you are logged in.',
+                    timestamp: new Date().toISOString()
+                }];
+            }
+            return [];
+        }
+
+        const data = await response.json();
+        if (!data.comments || !Array.isArray(data.comments)) {
+            return [];
+        }
+
+        const processedComments = data.comments.map((c: any, index: number) => {
+            let body = '';
+            if (c.body && typeof c.body === 'object') {
+                try {
+                    body = parseADF(c.body);
+                } catch (e) {
+                    if (c.renderedBody) body = cleanCommentBody(c.renderedBody, document);
+                }
+            } else if (c.renderedBody) {
+                body = cleanCommentBody(c.renderedBody, document);
+            } else if (c.body && typeof c.body === 'string') {
+                body = c.body;
+            } else {
+                body = '[Content Not Available]';
+            }
+
+            const author = c.author?.displayName || 'Unknown User';
+            let created = new Date().toISOString();
+            try {
+                if (c.created) {
+                    created = new Date(c.created).toLocaleString('en-US', {
+                        year: 'numeric', month: 'short', day: 'numeric',
+                        hour: 'numeric', minute: '2-digit'
+                    });
+                }
+            } catch (e) { }
+
+            return {
+                id: c.id || `comment-${index}`,
+                author,
+                body: body.trim(),
+                timestamp: created
+            };
+        }).filter((item: any) => item !== null);
+
+        return processedComments.reverse();
+
+    } catch (err) {
+        console.error('JiraParser: API Fetch Exception', err);
+        return [{
+            id: 'error-exception',
+            author: 'System',
+            body: `Error: API Fetch failed. ${err}`,
+            timestamp: new Date().toISOString()
+        }];
+    }
+}

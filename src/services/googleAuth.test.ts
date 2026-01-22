@@ -1,19 +1,28 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { GoogleAuthService } from './googleAuth';
 
 // Mock chrome global
 const chromeMock = {
     identity: {
         getAuthToken: vi.fn(),
         removeCachedAuthToken: vi.fn(),
+        launchWebAuthFlow: vi.fn((opts, cb) => cb(undefined)),
+        getRedirectURL: vi.fn().mockReturnValue('https://mock.redirect.url'),
     },
     runtime: {
         lastError: undefined,
     },
+    storage: {
+        local: {
+            get: vi.fn().mockResolvedValue({}),
+            set: vi.fn().mockResolvedValue(undefined),
+            remove: vi.fn().mockResolvedValue(undefined),
+        },
+    },
 };
 
-// @ts-ignore
-global.chrome = chromeMock;
+vi.stubGlobal('chrome', chromeMock);
+
+import { GoogleAuthService } from './googleAuth';
 
 describe('GoogleAuthService', () => {
     let authService: GoogleAuthService;
