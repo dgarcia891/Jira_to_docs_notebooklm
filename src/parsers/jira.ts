@@ -5,7 +5,7 @@ import * as api from './jira/api';
 
 export class JiraParser implements WorkItemParser {
     canParse(url: string): boolean {
-        const jiraUrlPattern = /atlassian\.net\/(browse\/|jira\/software\/.*selectedIssue=)/;
+        const jiraUrlPattern = /atlassian\.net\/(browse\/|jira\/software\/.*(selectedIssue=|issues\/))/;
         return jiraUrlPattern.test(url);
     }
 

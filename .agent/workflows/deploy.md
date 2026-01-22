@@ -10,6 +10,3 @@ npm run build
 // turbo
 3. Push
 git push
-// turbo
-4. NAS Sync
-bash scripts/deploy.sh

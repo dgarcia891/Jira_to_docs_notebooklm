@@ -1,5 +1,10 @@
 # Changelog
 
+## [4.8.15] - 2026-01-22
+### Fixed
+- **Improved Background Stability**: Added specific error detection for extension lifecycle events. The extension now intelligently suggests a **Page Refresh** when communication with the Jira content script is interrupted due to an update.
+- **Robust URL Parsing**: Expanded Jira page detection to officially support **Software Boards and Backlogs** (where the issue key is in a `selectedIssue=` parameter).
+
 ## [4.8.14] - 2026-01-22
 ### Fixed
 - **Precise Sync Replacement**: Implemented regex-based key matching in the Google Docs sync service. This fixes a critical bug where tickets with similar keys (e.g., TEST-1 and TEST-10) would collide, causing incorrect section replacements or duplicate entries.
