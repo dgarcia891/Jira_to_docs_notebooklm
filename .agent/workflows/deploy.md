@@ -5,8 +5,11 @@ description: Release Engine (Test -> Bump -> Sync).
 1. Release
 npm run release
 // turbo
-2. Push
+2. Build
+npm run build
+// turbo
+3. Push
 git push
 // turbo
-3. NAS Sync
+4. NAS Sync
 bash scripts/deploy.sh

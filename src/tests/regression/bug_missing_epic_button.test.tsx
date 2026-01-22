@@ -55,7 +55,7 @@ describe('Bug Fix: Missing Epic Button', () => {
 
     it('should NOT show Epic button if keyData is a string (reproducing the bug)', async () => {
         // Simulating the bug: Background returns a string instead of an object
-        mockRuntime.sendMessage.mockImplementation(async (msg) => {
+        mockRuntime.sendMessage.mockImplementation(async (msg: any) => {
             if (msg.type === 'GET_CURRENT_ISSUE_KEY') return 'EPIC-123';
             if (msg.type === 'GET_ISSUE_DOC_LINK') return { id: 'doc-1', name: 'Doc 1' };
             return null;
@@ -74,7 +74,7 @@ describe('Bug Fix: Missing Epic Button', () => {
 
     it('should show Epic button if keyData is an object with type "Epic" (desired behavior)', async () => {
         // Simulating the fix: Background returns the full object
-        mockRuntime.sendMessage.mockImplementation(async (msg) => {
+        mockRuntime.sendMessage.mockImplementation(async (msg: any) => {
             if (msg.type === 'GET_CURRENT_ISSUE_KEY') return { key: 'EPIC-123', type: 'Epic', title: 'My Epic' };
             if (msg.type === 'GET_ISSUE_DOC_LINK') return { id: 'doc-1', name: 'Doc 1' };
             return null;
