@@ -1,5 +1,9 @@
 # Changelog
 
+## [4.8.13] - 2026-01-22
+### Added
+- **Comment Divider**: Added a visual dashed separator between the ticket information and the comments section in the Google Doc sync to improve readability.
+
 ## [4.8.12] - 2026-01-22
 ### Fixed
 - **Restored "Sync Epic" Button**: Fixed a bug where the background script was stripping out the issue type metadata, causing the "Sync Epic & Children" button to stay hidden. It now correctly forwards the full issue info to the popup.

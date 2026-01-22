@@ -12,6 +12,7 @@ Description
 ${e.description}
 ${w}
 
+--------------------------------------------------
 Latest Comments
 ${s}
 

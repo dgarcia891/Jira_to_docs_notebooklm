@@ -162,6 +162,7 @@ Description
 ${item.description}
 ${linkedIssuesContent}
 
+--------------------------------------------------
 Latest Comments
 ${commentsList}
 
