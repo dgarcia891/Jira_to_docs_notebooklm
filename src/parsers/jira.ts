@@ -137,7 +137,9 @@ export class JiraParser implements WorkItemParser {
         const links = f.issuelinks || [];
         const subtasks = f.subtasks || [];
         const targetKeys = [
-            ...links.map((l: any) => (l.outwardIssue || l.inwardIssue)?.key),
+            ...links
+                .filter((l: any) => l.type?.name !== 'Cloners')
+                .map((l: any) => (l.outwardIssue || l.inwardIssue)?.key),
             ...subtasks.map((st: any) => st.key)
         ].filter(Boolean).slice(0, 10);
 

@@ -1,5 +1,9 @@
 # Changelog
 
+## [4.8.22] - 2026-01-22
+### Changed
+- **Automated Clone Filtering**: The sync engine now automatically identifies and excludes Jira tickets linked via the "Cloners" relationship type. This removes historical noise and ensuring your synchronized Google Doc is focused solely on current, relevant work items for NotebookLM analysis.
+
 ## [4.8.21] - 2026-01-22
 ### Changed
 - **UI Refinement**: Redesigned the popup layout for better ergonomics.

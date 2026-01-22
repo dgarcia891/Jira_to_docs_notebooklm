@@ -1,12 +1,12 @@
 {
   "../../../../../@crx/manifest": {
-    "file": "assets/crx-manifest.js-CCGNVl7y.js",
+    "file": "assets/crx-manifest.js-tADGp9lp.js",
     "name": "crx-manifest.js",
     "src": "../../../../../@crx/manifest",
     "isEntry": true
   },
   "index.html": {
-    "file": "assets/index.html-Di9rxN71.js",
+    "file": "assets/index.html-Cfqm7ogd.js",
     "name": "index.html",
     "src": "index.html",
     "isEntry": true
@@ -18,7 +18,7 @@
     "isEntry": true
   },
   "src/content.ts": {
-    "file": "assets/content.ts-qWHVavmf.js",
+    "file": "assets/content.ts-Bt04dfg8.js",
     "name": "content.ts",
     "src": "src/content.ts",
     "isEntry": true
