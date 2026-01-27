@@ -144,6 +144,12 @@ async function handleMessage(message: BackgroundMessage, retryCount = 0): Promis
                 return true;
             }
 
+            case 'REFRESH_TAB': {
+                const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+                if (tab?.id) await chrome.tabs.reload(tab.id);
+                return { success: true };
+            }
+
             case 'SYNC_CURRENT_PAGE':
                 return await handleSync();
 

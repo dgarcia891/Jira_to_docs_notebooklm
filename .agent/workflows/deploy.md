@@ -1,12 +1,13 @@
----
-description: Release Engine (Test -> Bump -> Sync).
----
-// turbo
-1. Release
-npm run release
-// turbo
-2. Build
-npm run build
-// turbo
-3. Push
-git push
+name: deploy
+description: Sync -> Validate -> Tag -> Push.
+steps:
+  - name: Sync Remote
+    command: git pull --rebase origin main
+  - name: Validate Manifest
+    command: bash scripts/validate-manifest.sh
+  - name: Test Suite
+    command: npm test
+  - name: Version Bump
+    command: node scripts/release.js # Bumps package.json AND manifest.json
+  - name: Git Push
+    command: git push && git push --tags

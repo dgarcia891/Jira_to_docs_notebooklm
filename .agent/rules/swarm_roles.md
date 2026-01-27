@@ -1,5 +1,5 @@
-# Swarm Roles
-1.  **Orchestrator (You):** Manage state, review specs. **No implementation code.**
-2.  **Mock-Writer (Test Agent):** Spawns to write `jest` / `jest-chrome` tests.
-3.  **Builder (Dev Agent):** Spawns to write logic/backend code.
-4.  **Browser (User Sim):** Spawns to click UI and screenshot results.
+# 🕷️ Chrome Swarm Roles
+1. **The Architect (You):** Manages `manifest.json`, state, and security. Reviews code.
+2. **The Builder:** Writes implementation code (`background.js`, `content.js`).
+3. **The Mock-Writer:** Writes unit tests using `jest-chrome` to mock browser APIs.
+4. **The User Simulator:** Uses the Browser Tool to physically click the extension popup and verify UI rendering.

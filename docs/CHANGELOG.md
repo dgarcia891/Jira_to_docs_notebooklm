@@ -1,5 +1,10 @@
 # Changelog
 
+## [4.8.32] - 2026-01-27
+### Added
+- **Hard Refresh**: Added a new button ♿️ (Reload Page) to the header that performs a full browser tab reload. Useful if Jira becomes unresponsive or background context is lost.
+- **Improved UI Layout**: Refined header layout to accommodate multiple action buttons.
+
 ## [4.8.31] - 2026-01-27
 ### Fixed
 - **Dead Link Cleanup**: Automatically detects and clears cached links to Google Docs that have been deleted or moved to trash, resolving the "Failed to fetch doc (404)" error.

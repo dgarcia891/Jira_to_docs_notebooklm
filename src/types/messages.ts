@@ -15,6 +15,7 @@ export type BackgroundMessage =
     | { type: 'CLEAR_ISSUE_DOC_LINK'; payload: { issueKey: string } }
     | { type: 'GET_CURRENT_ISSUE_KEY' }
     | { type: 'GET_LAST_SYNC'; payload: { issueKey: string } }
+    | { type: 'REFRESH_TAB' }
     | { type: 'LOGOUT' };
 
 export type ProgressMessage =

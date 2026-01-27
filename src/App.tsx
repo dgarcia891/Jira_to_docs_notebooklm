@@ -126,6 +126,15 @@ const App: React.FC = () => {
         }
     };
 
+    const handleHardRefresh = async () => {
+        try {
+            await chrome.runtime.sendMessage({ type: 'REFRESH_TAB' });
+            window.close(); // Close popup as the page is reloading
+        } catch (err) {
+            console.error('Hard refresh failed:', err);
+        }
+    };
+
     const handleCreateAndLink = async (forceSyncChildren?: boolean) => {
         if (!jiraSync.currentIssueKey) return;
         setIsSyncing(true);
@@ -201,13 +210,20 @@ const App: React.FC = () => {
 
             <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span style={{ fontSize: '10px', color: '#6B778C', fontWeight: 'bold' }}>v4.8.31</span>
+                    <span style={{ fontSize: '10px', color: '#6B778C', fontWeight: 'bold' }}>v4.8.32</span>
                     <button
                         onClick={() => jiraSync.checkCurrentPageLink()}
                         title="Refresh page info"
-                        style={{ ...styles.textLinkStyle, padding: 0, textDecoration: 'none', fontSize: '14px' }}
+                        style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', fontSize: '14px', padding: '0 4px' }}
                     >
                         🔄
+                    </button>
+                    <button
+                        onClick={handleHardRefresh}
+                        title="Reload Browser Page"
+                        style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', fontSize: '14px', padding: '0 4px', opacity: 0.7 }}
+                    >
+                        ♿️
                     </button>
                 </div>
                 <h2 style={{ fontSize: '18px', margin: 0, color: '#172B4D' }}>Jira Connector</h2>
