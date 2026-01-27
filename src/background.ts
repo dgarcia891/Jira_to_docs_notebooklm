@@ -65,107 +65,122 @@ chrome.runtime.onMessage.addListener((message: BackgroundMessage, sender, sendRe
     handleMessage(message)
         .then(sendResponse)
         .catch(err => {
-            // JSON.stringify can't serialize Error objects by default
-            const errorObj = {
-                message: err.message || 'Unknown error',
-                name: err.name,
-                stack: err.stack,
-                original: err
-            };
-            console.error('Background Error Detailed:', JSON.stringify(errorObj, null, 2));
+            const isExpectedError = err.message?.includes('Extension updated');
+
+            if (!isExpectedError) {
+                // JSON.stringify can't serialize Error objects by default
+                const errorObj = {
+                    message: err.message || 'Unknown error',
+                    name: err.name,
+                    stack: err.stack,
+                    original: err
+                };
+                console.error('Background Error Detailed:', JSON.stringify(errorObj, null, 2));
+            }
+
             sendResponse({ error: err.message || JSON.stringify(err) });
         });
     return true; // Async response
 });
 
-async function handleMessage(message: BackgroundMessage) {
-    switch (message.type) {
-        case 'LOGIN':
-            console.log('Background: Triggering LOGIN flow...');
-            return await authService.login();
+async function handleMessage(message: BackgroundMessage, retryCount = 0): Promise<any> {
+    try {
+        switch (message.type) {
+            case 'LOGIN':
+                console.log('Background: Triggering LOGIN flow...');
+                return await authService.login();
 
-        case 'CHECK_AUTH':
-            return await authService.getToken();
+            case 'CHECK_AUTH':
+                return await authService.getToken();
 
-        case 'LIST_DOCS': {
-            const token = await authService.getToken();
-            if (!token) throw new Error('Not authenticated');
-            return await docsService.listDocs(token);
-        }
-
-        case 'LIST_DRIVE_FOLDERS': {
-            const token = await authService.getToken();
-            if (!token) throw new Error('Not authenticated');
-            return await docsService.listFolders(token, message.payload?.parentId);
-        }
-
-        case 'SEARCH_DOCS': {
-            const token = await authService.getToken();
-            if (!token) throw new Error('Not authenticated');
-            return await docsService.searchDocs(token, message.payload.query);
-        }
-
-        case 'CREATE_DOC': {
-            const token = await authService.getToken();
-            if (!token) throw new Error('Not authenticated');
-            return await docsService.createDoc(message.payload.title, token, message.payload.folderId);
-        }
-
-        case 'GET_CURRENT_ISSUE_KEY': {
-            const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-            if (!tab?.id) throw new Error('No active tab found.');
-            try {
-                const response = await chrome.tabs.sendMessage(tab.id, { type: 'GET_ISSUE_KEY' }) as { key?: string; error?: string };
-                if (response.error) throw new Error(response.error);
-                return response;
-            } catch (e: any) {
-                console.warn('Background: GET_CURRENT_ISSUE_KEY failed', e);
-                const isConnectionError = e.message?.includes('Could not establish connection') || e.message?.includes('context invalidated');
-                if (isConnectionError) {
-                    throw new Error('Extension updated. Please refresh your Jira page to continue.');
-                }
-                throw new Error('Please open the extension on a Jira issue page.');
+            case 'LIST_DOCS': {
+                const token = await authService.getToken();
+                if (!token) throw new Error('Not authenticated');
+                return await docsService.listDocs(token);
             }
+
+            case 'LIST_DRIVE_FOLDERS': {
+                const token = await authService.getToken();
+                if (!token) throw new Error('Not authenticated');
+                return await docsService.listFolders(token, message.payload?.parentId);
+            }
+
+            case 'SEARCH_DOCS': {
+                const token = await authService.getToken();
+                if (!token) throw new Error('Not authenticated');
+                return await docsService.searchDocs(token, message.payload.query);
+            }
+
+            case 'CREATE_DOC': {
+                const token = await authService.getToken();
+                if (!token) throw new Error('Not authenticated');
+                return await docsService.createDoc(message.payload.title, token, message.payload.folderId);
+            }
+
+            case 'GET_CURRENT_ISSUE_KEY': {
+                const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+                if (!tab?.id) throw new Error('No active tab found.');
+                try {
+                    const response = await chrome.tabs.sendMessage(tab.id, { type: 'GET_ISSUE_KEY' }) as { key?: string; error?: string };
+                    if (response.error) throw new Error(response.error);
+                    return response;
+                } catch (e: any) {
+                    console.warn('Background: GET_CURRENT_ISSUE_KEY failed', e);
+                    const isConnectionError = e.message?.includes('Could not establish connection') || e.message?.includes('context invalidated');
+                    if (isConnectionError) {
+                        throw new Error('Extension updated. Please refresh your Jira page to continue.');
+                    }
+                    throw new Error('Please open the extension on a Jira issue page.');
+                }
+            }
+
+            case 'GET_SELECTED_DOC': {
+                const result = await chrome.storage.local.get('selectedDoc');
+                return normalizeDoc(result.selectedDoc);
+            }
+
+            case 'SET_SELECTED_DOC': {
+                await chrome.storage.local.set({ selectedDoc: message.payload });
+                return true;
+            }
+
+            case 'SYNC_CURRENT_PAGE':
+                return await handleSync();
+
+            case 'SYNC_EPIC':
+                return await handleEpicSync(message.payload.epicKey);
+
+            case 'GET_ISSUE_DOC_LINK': {
+                const { issueKey } = message.payload;
+                const links = await getIssueDocLinks();
+                return links[issueKey] || null;
+            }
+
+            case 'CLEAR_ISSUE_DOC_LINK': {
+                const { issueKey } = message.payload;
+                const links = await getIssueDocLinks();
+                delete links[issueKey];
+                await chrome.storage.local.set({ issueDocLinks: links });
+                return true;
+            }
+
+            case 'GET_LAST_SYNC': {
+                const { issueKey } = message.payload;
+                const data = await chrome.storage.local.get('issueSyncTimes');
+                const syncTimes = (data.issueSyncTimes || {}) as Record<string, any>;
+                return syncTimes[issueKey] || null;
+            }
+            case 'LOGOUT':
+                return await authService.logout();
         }
-
-        case 'GET_SELECTED_DOC': {
-            const result = await chrome.storage.local.get('selectedDoc');
-            return normalizeDoc(result.selectedDoc);
+    } catch (err: any) {
+        // Handle 401 errors with a single retry
+        if (err.message?.includes('401') && retryCount === 0) {
+            console.warn('Background: 401 detected in handleMessage. Clearing cache and retrying...');
+            await authService.clearCachedToken();
+            return await handleMessage(message, 1);
         }
-
-        case 'SET_SELECTED_DOC': {
-            await chrome.storage.local.set({ selectedDoc: message.payload });
-            return true;
-        }
-
-        case 'SYNC_CURRENT_PAGE':
-            return await handleSync();
-
-        case 'SYNC_EPIC':
-            return await handleEpicSync(message.payload.epicKey);
-
-        case 'GET_ISSUE_DOC_LINK': {
-            const { issueKey } = message.payload;
-            const links = await getIssueDocLinks();
-            return links[issueKey] || null;
-        }
-
-        case 'CLEAR_ISSUE_DOC_LINK': {
-            const { issueKey } = message.payload;
-            const links = await getIssueDocLinks();
-            delete links[issueKey];
-            await chrome.storage.local.set({ issueDocLinks: links });
-            return true;
-        }
-
-        case 'GET_LAST_SYNC': {
-            const { issueKey } = message.payload;
-            const data = await chrome.storage.local.get('issueSyncTimes');
-            const syncTimes = (data.issueSyncTimes || {}) as Record<string, any>;
-            return syncTimes[issueKey] || null;
-        }
-        case 'LOGOUT':
-            return await authService.logout();
+        throw err;
     }
 }
 

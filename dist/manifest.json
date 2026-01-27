@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Jira to NotebookLM Connector",
-  "version": "4.8.23",
+  "version": "4.8.29",
   "description": "One-click sync of Jira issues to Google Docs for NotebookLM analysis.",
   "permissions": [
     "activeTab",
@@ -22,7 +22,7 @@
   "content_scripts": [
     {
       "js": [
-        "assets/content.ts-Bt04dfg8.js"
+        "assets/content.ts-loader-D6tQsppk.js"
       ],
       "matches": [
         "https://*.atlassian.net/browse/*",
@@ -49,7 +49,8 @@
         "https://*.atlassian.net/*"
       ],
       "resources": [
-        "assets/content.ts-Bt04dfg8.js"
+        "assets/docUtils-CDeOq3Hw.js",
+        "assets/content.ts-Dgcyq-z4.js"
       ],
       "use_dynamic_url": false
     }

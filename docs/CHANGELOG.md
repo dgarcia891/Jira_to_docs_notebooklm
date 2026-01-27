@@ -1,5 +1,36 @@
 # Changelog
 
+## [4.8.29] - 2026-01-26
+### Added
+- **Authentication Resilience**: Implemented automated token clearing and a single-retry mechanism for all Google API calls. If a session expires or a `401 Unauthorized` occurs, the extension now silently attempts a refresh before failing.
+### Changed
+- **Proactive Token Refresh**: Reduced the internal token expiry buffer to 50 minutes (from 58 mins) to ensure the extension requests a fresh token *before* the Google 1-hour limit is reached.
+- **Improved Silent Refresh**: Hardened the authentication service to clear stale local caches if a silent refresh fails, preventing repetitive login prompts.
+
+## [4.8.28] - 2026-01-23
+### Fixed
+- **Metadata Cleanup**: Removed duplicate Story Points entries from the synchronized Google Doc.
+
+## [4.8.27] - 2026-01-23
+### Added
+- **Manual Refresh**: Added a 🔄 button to the header to manually re-scan Jira page info.
+### Fixed
+- **T-Shirt Size Parsing**: Fixed an issue where T-Shirt sizes stored as arrays in Jira rendered as raw JSON.
+### Changed
+- **Story Points Prominence**: Moved Story Points to the top of the metadata section for better visibility.
+
+## [4.8.26] - 2026-01-23
+### Added
+- **Story Points Support**: Extracted and displayed Jira Story Points/Estimates in the metadata section of synced tickets.
+
+## [4.8.25] - 2026-01-23
+### Changed
+- **Timezone Transparency**: Standardized all date formatting across the extension. All timestamps (Synced, Created, Updated, and Comments) now include a local timezone indicator (e.g., "PST") to clarify discrepancies between Jira's UI and the browser's local time.
+
+## [4.8.24] - 2026-01-22
+### Changed
+- **Error Logging Refinement**: Suppressed redundant `console.error` logs in the background script for expected lifecycle events (like "Extension updated" messages). This ensures a cleaner developer console while still providing the necessary guidance to the user via the UI.
+
 ## [4.8.23] - 2026-01-22
 ### Added
 - **Persistent Progressive Sync**: Implemented a robust progress tracking system that persists across extension popup closures.

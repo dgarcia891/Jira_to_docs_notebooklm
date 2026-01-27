@@ -51,6 +51,7 @@ export interface WorkItem {
     /** v4.0 Expanded Metadata */
     sprints?: string[];
     tShirtSize?: string;
+    storyPoints?: string;
     workType?: string;
     businessTeam?: string;
     businessObjective?: string;

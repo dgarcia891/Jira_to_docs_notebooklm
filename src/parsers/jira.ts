@@ -92,8 +92,13 @@ export class JiraParser implements WorkItemParser {
                 .filter(id => id !== undefined);
 
             for (const id of matchedIds) {
-                const val = f[id];
+                let val = f[id];
                 if (val !== undefined && val !== null) {
+                    // Handle array of values (common in some Jira configurations)
+                    if (Array.isArray(val) && val.length > 0) {
+                        val = val[0];
+                    }
+
                     if (typeof val === 'object') {
                         if (val.value) return val.value;
                         if (val.name) return val.name;
@@ -165,6 +170,7 @@ export class JiraParser implements WorkItemParser {
             updatedDate: f.updated,
             sprints: f[fieldMap['sprint']]?.map((s: any) => s.name) || [],
             tShirtSize,
+            storyPoints: getCustom(['story points', 'story point estimate', 'point estimate', 'points']),
             workType: getCustom(['work type', 'work item type']),
             businessTeam: getCustom(['requesting business team', 'team']),
             businessObjective: getCustom(['business objective', 'goal', 'business value']),

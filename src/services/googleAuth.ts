@@ -41,7 +41,7 @@ export class GoogleAuthService implements AuthService {
         });
 
         if (nativeToken) {
-            await chrome.storage.local.set({ auth_token: nativeToken, token_expiry: Date.now() + 3500 * 1000 });
+            await chrome.storage.local.set({ auth_token: nativeToken, token_expiry: Date.now() + 3000 * 1000 });
             return nativeToken;
         }
 
@@ -64,7 +64,7 @@ export class GoogleAuthService implements AuthService {
                     } else {
                         const token = parseTokenFromUrl(responseUrl);
                         if (token) {
-                            chrome.storage.local.set({ auth_token: token, token_expiry: Date.now() + 3500 * 1000 });
+                            chrome.storage.local.set({ auth_token: token, token_expiry: Date.now() + 3000 * 1000 });
                         }
                         resolve(token);
                     }
@@ -90,14 +90,34 @@ export class GoogleAuthService implements AuthService {
         const token = data.auth_token as string | undefined;
         const expiry = data.token_expiry as number | undefined;
 
-        if (token && expiry && expiry > Date.now()) {
+        // Use a 5-minute (300s) buffer instead of assuming 1 hour is always safe
+        if (token && expiry && expiry > (Date.now() + 300 * 1000)) {
             console.log('GoogleAuth: Using valid cached token from storage.');
             return token;
         }
 
         // 2. Local token missing or expired, try silent refresh via Native Auth
         console.log('GoogleAuth: Storage token missing/expired. Attempting silent fetch...');
-        return await this.fetchToken(false);
+        const newToken = await this.fetchToken(false);
+
+        if (!newToken && token) {
+            // If silent refresh failed but we had an old token, clear it to prevent 401 loops
+            console.warn('GoogleAuth: Silent refresh failed. Clearing stale token.');
+            await this.clearCachedToken(token);
+        }
+
+        return newToken;
+    }
+
+    async clearCachedToken(token?: string): Promise<void> {
+        console.log('GoogleAuth: Clearing cached token...');
+        await chrome.storage.local.remove(['auth_token', 'token_expiry', 'userInfo']);
+
+        if (token && typeof chrome !== 'undefined' && chrome.identity?.removeCachedAuthToken) {
+            await new Promise<void>((resolve) => {
+                chrome.identity.removeCachedAuthToken({ token }, () => resolve());
+            });
+        }
     }
 
     async getUserInfo(token: string): Promise<UserInfo> {

@@ -1,6 +1,7 @@
-import { Comment } from '../../types';
+import { Comment as WorkItemComment } from '../../types';
 import { parseADF } from './adf';
 import { cleanCommentBody } from './utils';
+import { formatDate } from '../../utils/docUtils';
 
 export async function fetchEpicChildren(epicKey: string, baseUrl: string, authHeaders: Record<string, string>): Promise<string[]> {
     console.log(`JiraParser: Discovering children for Epic ${epicKey}...`);
@@ -54,7 +55,7 @@ export async function fetchLinkedIssueDetails(key: string, fieldMap: Record<stri
                 id: c.id,
                 author: c.author?.displayName || 'Unknown User',
                 body: body.trim(),
-                timestamp: c.created ? new Date(c.created).toLocaleString() : ''
+                timestamp: formatDate(c.created)
             };
         }).reverse();
 
@@ -85,7 +86,7 @@ export function extractRationale(body: any): string {
     return lines.slice(0, 2).join(' ') + (lines.length > 2 ? '...' : '');
 }
 
-export async function extractComments(baseUrl: string, authHeaders: Record<string, string>, document: Document, issueKey?: string): Promise<Comment[]> {
+export async function extractComments(baseUrl: string, authHeaders: Record<string, string>, document: Document, issueKey?: string): Promise<WorkItemComment[]> {
     if (!issueKey) return [];
 
     try {
@@ -133,15 +134,7 @@ export async function extractComments(baseUrl: string, authHeaders: Record<strin
             }
 
             const author = c.author?.displayName || 'Unknown User';
-            let created = new Date().toISOString();
-            try {
-                if (c.created) {
-                    created = new Date(c.created).toLocaleString('en-US', {
-                        year: 'numeric', month: 'short', day: 'numeric',
-                        hour: 'numeric', minute: '2-digit'
-                    });
-                }
-            } catch (e) { }
+            const created = formatDate(c.created);
 
             return {
                 id: c.id || `comment-${index}`,
