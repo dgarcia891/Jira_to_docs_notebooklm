@@ -7,6 +7,7 @@ export function useJiraSync() {
     const [issueType, setIssueType] = useState<string | null>(null);
     const [linkedDoc, setLinkedDoc] = useState<{ id: string; name: string } | null>(null);
     const [lastSync, setLastSync] = useState<number | null>(null);
+    const [lastSyncType, setLastSyncType] = useState<'single' | 'bulk' | null>(null);
     const [timeAgo, setTimeAgo] = useState<string | null>(null);
     const [isLoadingLink, setIsLoadingLink] = useState(false);
     const [isEpic, setIsEpic] = useState(false);
@@ -19,9 +20,11 @@ export function useJiraSync() {
             });
             if (result && result.time) {
                 setLastSync(result.time);
+                setLastSyncType(result.type || null);
                 updateTimeAgo(result.time);
             } else {
                 setLastSync(null);
+                setLastSyncType(null);
                 setTimeAgo(null);
             }
         } catch (e) {
@@ -92,11 +95,12 @@ export function useJiraSync() {
         issueType,
         linkedDoc, setLinkedDoc,
         lastSync,
+        lastSyncType,
         timeAgo,
         isLoadingLink,
         isEpic,
         checkCurrentPageLink,
         refreshLastSync,
         updateTimeAgo
-    }), [currentIssueKey, currentIssueTitle, newDocTitle, issueType, linkedDoc, lastSync, timeAgo, isLoadingLink, isEpic, checkCurrentPageLink, refreshLastSync, updateTimeAgo]);
+    }), [currentIssueKey, currentIssueTitle, newDocTitle, issueType, linkedDoc, lastSync, lastSyncType, timeAgo, isLoadingLink, isEpic, checkCurrentPageLink, refreshLastSync, updateTimeAgo]);
 }

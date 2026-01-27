@@ -1,5 +1,10 @@
 # Changelog
 
+## [4.8.30] - 2026-01-26
+### Added
+- **Per-Page Sync Persistence**: The extension now remembers which sync button ("Sync Individual" or "Sync All") was last used for each specific Jira issue.
+- **Improved UI Highlighting**: The active sync method for a page is now clearly highlighted, ensuring visual consistency across different Jira tickets.
+
 ## [4.8.29] - 2026-01-26
 ### Added
 - **Authentication Resilience**: Implemented automated token clearing and a single-retry mechanism for all Google API calls. If a session expires or a `401 Unauthorized` occurs, the extension now silently attempts a refresh before failing.

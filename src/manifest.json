@@ -1,7 +1,7 @@
 {
     "manifest_version": 3,
     "name": "Jira to NotebookLM Connector",
-    "version": "4.8.29",
+    "version": "4.8.30",
     "description": "One-click sync of Jira issues to Google Docs for NotebookLM analysis.",
     "permissions": [
         "activeTab",

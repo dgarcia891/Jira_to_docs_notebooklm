@@ -257,11 +257,12 @@ async function handleSync() {
         const syncResult = {
             status: 'success',
             time: Date.now(),
-            message: `Synced to ${targetDoc.name}`
+            message: `Synced to ${targetDoc.name}`,
+            type: 'single'
         };
         issueSyncTimes[issueKey] = syncResult;
 
-        await chrome.storage.local.set({ issueSyncTimes, lastSyncType: 'single' });
+        await chrome.storage.local.set({ issueSyncTimes });
         await updateSyncState({
             isSyncing: false,
             progress: 100,
@@ -338,10 +339,11 @@ async function handleEpicSync(epicKey: string) {
         const syncResult = {
             status: 'success',
             time: Date.now(),
-            message: `Bulk synced ${issues.length} issues to ${targetDoc.name}`
+            message: `Bulk synced ${issues.length} issues to ${targetDoc.name}`,
+            type: 'bulk'
         };
         issueSyncTimes[epicKey] = syncResult;
-        await chrome.storage.local.set({ issueSyncTimes, lastSyncType: 'bulk' });
+        await chrome.storage.local.set({ issueSyncTimes });
 
         await updateSyncState({
             isSyncing: false,
