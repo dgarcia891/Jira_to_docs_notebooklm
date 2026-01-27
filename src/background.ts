@@ -275,11 +275,41 @@ async function handleSync() {
 
     } catch (err: any) {
         console.error('Background Sync Error:', err);
+
+        let errorMessage = err.message;
+        if (err.message?.includes('404')) {
+            errorMessage = 'The linked Google Doc no longer exists or is inaccessible. The local link has been cleared.';
+
+            // Cleanup dead links
+            try {
+                const links = await getIssueDocLinks();
+                const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+                if (tab?.id) {
+                    const response = await chrome.tabs.sendMessage(tab.id, { type: 'EXTRACT_ISSUE' }) as ContentResponse;
+                    if (response.type === 'EXTRACT_SUCCESS') {
+                        const issueKey = response.payload.key;
+                        if (links[issueKey]) {
+                            delete links[issueKey];
+                            await chrome.storage.local.set({ issueDocLinks: links });
+                        }
+                    }
+                }
+
+                // Also check if the selectedDoc itself is the dead one
+                const { selectedDoc } = await chrome.storage.local.get('selectedDoc');
+                if (selectedDoc) {
+                    await chrome.storage.local.remove('selectedDoc');
+                }
+            } catch (cleanupErr) {
+                console.error('Failed to cleanup dead links after 404:', cleanupErr);
+            }
+        }
+
         await updateSyncState({
             isSyncing: false,
             progress: 0,
-            status: `Error: ${err.message}`,
-            result: { status: 'error', message: err.message, time: Date.now() }
+            status: `Error: ${errorMessage}`,
+            result: { status: 'error', message: errorMessage, time: Date.now() }
         });
         throw err;
     }
@@ -356,12 +386,33 @@ async function handleEpicSync(epicKey: string) {
         return { success: true, count: issues.length, key: epicKey, id: targetDoc.id };
 
     } catch (err: any) {
-        console.error('Background Epic Sync Error:', err);
+        console.error('Background Bulk Sync Error:', err);
+
+        let errorMessage = err.message;
+        if (err.message?.includes('404')) {
+            errorMessage = 'The linked Google Doc no longer exists. The link has been cleared.';
+
+            try {
+                const links = await getIssueDocLinks();
+                if (links[epicKey]) {
+                    delete links[epicKey];
+                    await chrome.storage.local.set({ issueDocLinks: links });
+                }
+                const { selectedDoc } = await chrome.storage.local.get('selectedDoc');
+                if (selectedDoc) {
+                    await chrome.storage.local.remove('selectedDoc');
+                }
+            } catch (cleanupErr) {
+                console.error('Failed cleanup:', cleanupErr);
+            }
+        }
+
         await updateSyncState({
             isSyncing: false,
             progress: 0,
-            status: `Bulk Sync Error: ${err.message}`,
-            result: { status: 'error', message: err.message, time: Date.now() }
+            status: `Error: ${errorMessage}`,
+            key: epicKey,
+            result: { status: 'error', message: errorMessage, time: Date.now() }
         });
         throw err;
     }

@@ -1,5 +1,10 @@
 # Changelog
 
+## [4.8.31] - 2026-01-27
+### Fixed
+- **Dead Link Cleanup**: Automatically detects and clears cached links to Google Docs that have been deleted or moved to trash, resolving the "Failed to fetch doc (404)" error.
+- **Graceful Error Recovery**: Re-links are automatically suggested when a stale document is identified during sync.
+
 ## [4.8.30] - 2026-01-26
 ### Added
 - **Per-Page Sync Persistence**: The extension now remembers which sync button ("Sync Individual" or "Sync All") was last used for each specific Jira issue.
