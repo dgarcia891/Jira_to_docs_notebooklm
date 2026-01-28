@@ -110,13 +110,22 @@ const App: React.FC = () => {
     }, [jiraSync.currentIssueKey, jiraSync.refreshLastSync, auth.checkAuth, resumeSyncState, updateStatus, checkPendingLink]);
 
     const handleSync = async () => {
+        // If not linked and no pending link, open linking options instead of failing
+        if (!jiraSync.linkedDoc && !pendingLink) {
+            setShowLinkingOptions(true);
+            return;
+        }
+
         setIsSyncing(true);
         setSyncProgress(10);
         setSyncStatusText('Initializing...');
         try {
             await chrome.runtime.sendMessage({ type: 'SYNC_CURRENT_PAGE' });
         } catch (err: any) {
-            // Error is handled by background update
+            const errorMessage = err?.message || '';
+            if (errorMessage.includes('context invalidated')) {
+                setSyncStatusText('Extension updated. Please refresh page.');
+            }
         } finally {
             setIsSyncing(false);
             setSyncProgress(0);
@@ -154,6 +163,13 @@ const App: React.FC = () => {
             setIsSyncing(false);
             setSyncStatusText('');
         }
+    };
+
+    const handleCancelPending = async () => {
+        await chrome.runtime.sendMessage({ type: 'REMOVE_SELECTED_DOC' });
+        // Also remove locally to be sure, though message handler typically handles storage
+        await chrome.storage.local.remove('selectedDoc');
+        setPendingLink(null);
     };
 
     const handleCreateAndLink = async (forceSyncChildren?: boolean) => {
@@ -232,7 +248,7 @@ const App: React.FC = () => {
 
             <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span style={{ fontSize: '10px', color: '#6B778C', fontWeight: 'bold' }}>v9.5.3</span>
+                    <span style={{ fontSize: '10px', color: '#6B778C', fontWeight: 'bold' }}>v9.5.9</span>
                     <button
                         onClick={() => jiraSync.checkCurrentPageLink()}
                         title="Refresh page info"
@@ -323,12 +339,29 @@ const App: React.FC = () => {
                             color: '#172B4D',
                             fontSize: '13px'
                         }}>
-                            Pending Link Change: <b>{pendingLink.name}</b>
-                            <div style={{ fontSize: '11px', marginTop: '4px', opacity: 0.8 }}>Sync to apply changes.</div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <div>New Link Pending: <b>{pendingLink.name}</b></div>
+                                <button
+                                    onClick={handleCancelPending}
+                                    style={{
+                                        background: 'none',
+                                        border: 'none',
+                                        cursor: 'pointer',
+                                        fontSize: '14px',
+                                        padding: '0 4px',
+                                        color: '#172B4D',
+                                        opacity: 0.6
+                                    }}
+                                    title="Cancel pending link"
+                                >
+                                    ✕
+                                </button>
+                            </div>
+                            <div style={{ fontSize: '11px', marginTop: '4px', opacity: 0.8 }}>Sync to confirm and save this link.</div>
                         </div>
                     )}
 
-                    {jiraSync.linkedDoc ? (
+                    {jiraSync.linkedDoc && !pendingLink ? (
                         <div style={{
                             marginBottom: '20px',
                             padding: '12px',
@@ -383,7 +416,7 @@ const App: React.FC = () => {
                                 color: (jiraSync.lastSyncType === 'single' || !jiraSync.lastSyncType) ? 'white' : '#42526E'
                             }}
                         >
-                            {isSyncing ? 'Syncing...' : 'Sync Individual'}
+                            {isSyncing ? 'Syncing...' : (!jiraSync.linkedDoc && !pendingLink) ? 'Link & Sync' : 'Sync Individual'}
                         </button>
 
                         {jiraSync.isEpic && (

@@ -220,14 +220,14 @@ async function updateSyncState(state: {
 
 async function handleSync() {
     try {
+        await updateSyncState({ isSyncing: true, progress: 10, status: 'Initializing...', key: 'pending' });
+
         const token = await authService.getToken();
         if (!token) throw new Error('Not authenticated');
 
         // 1. Get active tab and extract issue
         const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
         if (!tab?.id) throw new Error('No active tab');
-
-        await updateSyncState({ isSyncing: true, progress: 10, status: 'Initializing...', key: 'pending' });
 
         const response = await chrome.tabs.sendMessage(tab.id, { type: 'EXTRACT_ISSUE' }) as ContentResponse;
         if (response.type === 'EXTRACT_ERROR') {

@@ -1,5 +1,17 @@
 # Changelog
 
+## [9.5.9] - 2026-01-28
+### Fixed
+- **Pending Link UI**: Added a "Cancel" button to the pending link notification, allowing users to dismiss accidental link selections.
+- **UI Clarity**: Hidden the "Current Link" box when a "Pending Link" is active to prevent confusion.
+- **Sticky Selection**: Explicitly clears `selectedDoc` from storage when cancelled.
+
+## [9.5.8] - 2026-01-27
+### Fixed
+- **Sync Stuck at 0%**: Immediate "Initializing" feedback.
+- **Sync Individual for Unlinked Issues**: Improved workflow.
+- **Extension Context Invalidated**: Graceful error handling.
+
 ## [9.5.3] - 2026-01-27
 ### Fixed
 - **Change Link Workflow**: Explicitly clear `selectedDoc` from storage after a sync operation to prevent "sticky link" behavior where new selections were ignored.

@@ -9,3 +9,5 @@
 ## Development Environment
 - **Vite & Extensions**: When developing Chrome Extensions with Vite, always enable `server.cors: true` and `server.strictPort: true` to prevent CORS blocks and port-mismatch issues during HMR/Service Worker registration.
 - **Interface Consistency**: Ensure message payload interfaces (e.g., `id` vs `docId`) match exactly between frontend and background scripts. Missed fields can lead to silent failures where objects exist but properties are undefined.
+- **UX/State Dependencies**: When an action (e.g., Sync) depends on a prerequisite state (e.g., Linked Document) that is missing, the UI should guide the user to the prerequisite action (e.g., 'Link & Sync') rather than allowing the action to fail silently or with a generic error.
+- **Async State Feedback**: Always trigger a UI state update (e.g., 'Initializing') *before* starting potentially long-running or hanging async operations (like Auth flows) in background scripts. This prevents 'dead clicks' where the UI appears unresponsive.

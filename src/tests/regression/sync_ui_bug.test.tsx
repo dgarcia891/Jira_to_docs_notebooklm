@@ -93,7 +93,7 @@ describe('Sync UI Bug Reproduction', () => {
             expect(screen.getByText(/Error: Failed to find issue/i)).toBeTruthy();
             // The button should be back to "Sync Individual" or "Syncing..." 
             // but for this test we'll just check it exists.
-            const button = screen.queryByText(/Sync Individual/i) || screen.queryByText(/Syncing.../i);
+            const button = screen.queryByText(/Sync Individual/i) || screen.queryByText(/Link & Sync/i) || screen.queryByText(/Syncing.../i);
             expect(button).not.toBeNull();
         }, { timeout: 3000 });
     });

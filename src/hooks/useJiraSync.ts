@@ -77,7 +77,16 @@ export function useJiraSync() {
                 setLinkedDoc(null);
             }
         } catch (e: any) {
-            const isConnectionError = e.message?.includes('Could not establish connection') || e.message?.includes('Receiving end does not exist');
+            const errorMessage = e?.message || '';
+            const isContextInvalidated = errorMessage.includes('context invalidated') || errorMessage.includes('Extension context invalidated');
+            const isConnectionError = errorMessage.includes('Could not establish connection') || errorMessage.includes('Receiving end does not exist');
+
+            if (isContextInvalidated) {
+                console.warn('Extension context invalidated. Reloading required.');
+                // Optionally set a UI state here if we want to show a "Please Reload" banner
+                return;
+            }
+
             if (isConnectionError && retries > 0) {
                 setTimeout(() => checkCurrentPageLink(retries - 1), 500);
                 return;
