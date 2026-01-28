@@ -18,7 +18,7 @@ body {
 
 .app-container {
     width: 400px;
-    min-height: 450px;
+    min-height: 320px;
     padding: 20px;
     background-color: white;
     display: flex;

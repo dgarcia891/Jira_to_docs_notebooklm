@@ -1,5 +1,12 @@
 # Changelog
 
+## [9.5.13] - 2026-01-27
+### Fixed
+- **UI Layout**: Fixed excessive whitespace regression in popup by reducing `min-height` to 320px.
+- **Banner Persistence**: Fixed "2-click" close bug where the sync success banner would persist across popup sessions. The state is now correctly cleared from storage once consumed.
+- **Async Safety**: Added defensive checks for `chrome.storage` API availability in component handlers.
+
+
 ## [9.5.12] - 2026-01-27
 ### Added
 - **Premium UI Refactor**: Fully migrated from in-line styles to Vanilla CSS (`App.css`).

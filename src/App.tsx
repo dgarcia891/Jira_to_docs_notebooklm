@@ -89,17 +89,27 @@ const App: React.FC = () => {
                         type: state.result.status as any
                     });
                     checkPendingLink(); // Re-check
+                    // Clear storage so it doesn't show again on next open
+                    if (chrome?.storage?.local) {
+                        chrome.storage.local.remove('activeSyncState');
+                    }
                 }
             } else if (msg.type === 'SYNC_COMPLETE') {
                 setIsSyncing(false);
                 setSyncProgress(100);
                 updateStatus({ text: 'Sync Complete!', type: 'success' });
                 checkPendingLink();
+                if (chrome?.storage?.local) {
+                    chrome.storage.local.remove('activeSyncState');
+                }
             } else if (msg.type === 'SYNC_ERROR') {
                 setIsSyncing(false);
                 setSyncProgress(0);
                 updateStatus({ text: `Error: ${msg.payload.message}`, type: 'error' });
                 checkPendingLink();
+                if (chrome?.storage?.local) {
+                    chrome.storage.local.remove('activeSyncState');
+                }
             }
         };
         chrome.runtime.onMessage.addListener(listener);
@@ -210,7 +220,7 @@ const App: React.FC = () => {
         <div className="app-container">
             <header className="header">
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span className="version-badge">v9.5.12</span>
+                    <span className="version-badge">v9.5.13</span>
                     <button
                         onClick={() => jiraSync.checkCurrentPageLink()}
                         className="icon-btn"
