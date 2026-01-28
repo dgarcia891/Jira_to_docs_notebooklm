@@ -24,12 +24,23 @@ const App: React.FC = () => {
     const [showLinkingOptions, setShowLinkingOptions] = useState(false);
     const [activeTab, setActiveTab] = useState<'all' | 'folders'>('all');
     const [syncChildren, setSyncChildren] = useState(false);
+    const [pendingLink, setPendingLink] = useState<{ id: string; name: string } | null>(null);
 
     const drive = useDrive();
     const jiraSync = useJiraSync();
     const settings = useSettings();
     const noop = useCallback(() => { }, []);
     const auth = useAuth(drive.loadDocs, noop);
+
+    const checkPendingLink = useCallback(async () => {
+        const result = await chrome.storage.local.get('selectedDoc');
+        const selectedDoc = result.selectedDoc as { id: string; name: string } | undefined;
+        if (selectedDoc && selectedDoc.name) {
+            setPendingLink(selectedDoc);
+        } else {
+            setPendingLink(null);
+        }
+    }, []);
 
     const updateStatus = useCallback((newStatus: { text: string; type: 'info' | 'success' | 'error' | 'debug' } | null) => {
         setStatus(newStatus);
@@ -58,6 +69,7 @@ const App: React.FC = () => {
         auth.checkAuth();
         jiraSync.checkCurrentPageLink();
         resumeSyncState();
+        checkPendingLink();
 
         const timer = setInterval(() => {
             if (jiraSync.currentIssueKey) jiraSync.refreshLastSync(jiraSync.currentIssueKey);
@@ -76,15 +88,18 @@ const App: React.FC = () => {
                         text: state.result.message,
                         type: state.result.status as any
                     });
+                    checkPendingLink(); // Re-check
                 }
             } else if (msg.type === 'SYNC_COMPLETE') {
                 setIsSyncing(false);
                 setSyncProgress(100);
                 updateStatus({ text: 'Sync Complete!', type: 'success' });
+                checkPendingLink();
             } else if (msg.type === 'SYNC_ERROR') {
                 setIsSyncing(false);
                 setSyncProgress(0);
                 updateStatus({ text: `Error: ${msg.payload.message}`, type: 'error' });
+                checkPendingLink();
             }
         };
         chrome.runtime.onMessage.addListener(listener);
@@ -92,7 +107,7 @@ const App: React.FC = () => {
             chrome.runtime?.onMessage?.removeListener?.(listener);
             clearInterval(timer);
         };
-    }, [jiraSync.currentIssueKey, jiraSync.refreshLastSync, auth.checkAuth, resumeSyncState, updateStatus]);
+    }, [jiraSync.currentIssueKey, jiraSync.refreshLastSync, auth.checkAuth, resumeSyncState, updateStatus, checkPendingLink]);
 
     const handleSync = async () => {
         setIsSyncing(true);
@@ -160,7 +175,8 @@ const App: React.FC = () => {
                 docNameToLink = found?.name || 'Linked Doc';
             }
 
-            await chrome.runtime.sendMessage({ type: 'SET_SELECTED_DOC', payload: { docId: docIdToLink, name: docNameToLink } });
+            await chrome.runtime.sendMessage({ type: 'SET_SELECTED_DOC', payload: { id: docIdToLink, name: docNameToLink } });
+            setPendingLink({ id: docIdToLink as string, name: docNameToLink });
 
             if (syncChildren || forceSyncChildren) {
                 await handleEpicSync();
@@ -296,6 +312,21 @@ const App: React.FC = () => {
                             📋
                         </button>
                     </div>
+
+                    {pendingLink && (
+                        <div style={{
+                            marginBottom: '15px',
+                            padding: '10px',
+                            background: '#FFF0B3',
+                            borderRadius: '8px',
+                            border: '1px solid #FFC400',
+                            color: '#172B4D',
+                            fontSize: '13px'
+                        }}>
+                            Pending Link Change: <b>{pendingLink.name}</b>
+                            <div style={{ fontSize: '11px', marginTop: '4px', opacity: 0.8 }}>Sync to apply changes.</div>
+                        </div>
+                    )}
 
                     {jiraSync.linkedDoc ? (
                         <div style={{

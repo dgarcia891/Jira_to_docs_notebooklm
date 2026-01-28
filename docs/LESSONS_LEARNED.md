@@ -8,3 +8,4 @@
 
 ## Development Environment
 - **Vite & Extensions**: When developing Chrome Extensions with Vite, always enable `server.cors: true` and `server.strictPort: true` to prevent CORS blocks and port-mismatch issues during HMR/Service Worker registration.
+- **Interface Consistency**: Ensure message payload interfaces (e.g., `id` vs `docId`) match exactly between frontend and background scripts. Missed fields can lead to silent failures where objects exist but properties are undefined.
