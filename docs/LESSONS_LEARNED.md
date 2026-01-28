@@ -15,3 +15,6 @@
 ### UI Regression Fix (v9.5.13)
 - **State Consumed, State Cleared**: When a background process (like Sync) updates a persistent storage key (like activeSyncState), the UI component 'consuming' that state must also clear the storage once the user has been notified. Failing to do so causes 'ghost' notifications on next mount.
 - **Mock Safety**: Avoid calling .catch() or .then() on chrome API mocks (like vi.fn()) in tests unless explicitly mocking a Promise. Standard Chrome APIs return undefined in many mock environments, leading to TypeErrors in tests that don't manifest in browser environments (where return is a Promise or a safe callback handler).
+
+### Development Experience
+- **HMR & Extension Context**: When developing Chrome Extensions with HMR, frequent reloads invalidate the extension context, causing 'Uncaught Error: Extension context invalidated' in the injected client. A simple global error boundary in the content script (dev-mode only) effectively silences these errors by triggering a clean page reload, mimicking the intended behavior.

@@ -1,5 +1,10 @@
 # Changelog
 
+## [9.5.16] - 2026-01-28
+### Fixed
+- **DevEx**: Added global error boundary in content script to catch and recover from "Extension context invalidated" errors caused by HMR client crashes during development reloads.
+
+
 ## [9.5.15] - 2026-01-27
 ### Added
 - **Deployment**: Official version bump for finalized UI/UX improvements.

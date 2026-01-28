@@ -21,6 +21,24 @@ if (import.meta.env.MODE === 'development') {
             window.location.reload();
         }
     }, 1000);
+
+    // Global error handler to catch HMR client crashes immediately
+    window.addEventListener('error', (event) => {
+        const msg = event.message || event.error?.message;
+        if (msg && typeof msg === 'string' && msg.includes('Extension context invalidated')) {
+            console.log('[Dev] Caught HMR context invalidation via Error boundary. Reloading...');
+            window.location.reload();
+        }
+    });
+
+    // Also catch unhandled promise rejections which might occur
+    window.addEventListener('unhandledrejection', (event) => {
+        const msg = event.reason?.message;
+        if (msg && typeof msg === 'string' && msg.includes('Extension context invalidated')) {
+            console.log('[Dev] Caught HMR context invalidation via Promise boundary. Reloading...');
+            window.location.reload();
+        }
+    });
 }
 
 chrome.runtime.onMessage.addListener((message: ContentMessage | { type: 'GET_ISSUE_KEY' }, sender, sendResponse) => {

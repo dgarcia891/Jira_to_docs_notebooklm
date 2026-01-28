@@ -13,6 +13,20 @@ if (import.meta.env.MODE === "development") {
       window.location.reload();
     }
   }, 1e3);
+  window.addEventListener("error", (event) => {
+    const msg = event.message || event.error?.message;
+    if (msg && typeof msg === "string" && msg.includes("Extension context invalidated")) {
+      console.log("[Dev] Caught HMR context invalidation via Error boundary. Reloading...");
+      window.location.reload();
+    }
+  });
+  window.addEventListener("unhandledrejection", (event) => {
+    const msg = event.reason?.message;
+    if (msg && typeof msg === "string" && msg.includes("Extension context invalidated")) {
+      console.log("[Dev] Caught HMR context invalidation via Promise boundary. Reloading...");
+      window.location.reload();
+    }
+  });
 }
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.type === "EXTRACT_ISSUE") {

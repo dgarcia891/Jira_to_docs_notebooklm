@@ -222,7 +222,7 @@ const App: React.FC = () => {
         <div className="app-container">
             <header className="header">
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span className="version-badge">v9.5.15</span>
+                    <span className="version-badge">v9.5.16</span>
                     <button
                         onClick={() => jiraSync.checkCurrentPageLink()}
                         className="icon-btn"
