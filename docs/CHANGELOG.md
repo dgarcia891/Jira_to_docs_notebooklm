@@ -1,5 +1,11 @@
 # Changelog
 
+## [9.5.21] - 2026-01-28
+### Fixed
+- **Persistent Link UI**: Fixed bug where the "LINKED DOCUMENT" card would show stale or incorrect document info after a successful sync. Added automatic UI refresh on sync completion.
+- **Document Name Resolution**: Fixed bug where document names were not correctly resolved when linking an existing document from the "Browse Folders" view.
+
+
 ## [9.5.20] - 2026-01-28
 ### Fixed
 - **Drive Search & Browse**: Unified Drive access to include both files and folders in search results and folder browsing. You can now correctly find and link documents even if they are inside folders, and navigate to folders found via search.

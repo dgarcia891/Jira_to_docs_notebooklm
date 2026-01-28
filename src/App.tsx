@@ -111,6 +111,10 @@ const App: React.FC = () => {
                         type: state.result.status as any
                     });
                     checkPendingLink(); // Re-check
+                    // Refresh link state if it was a success
+                    if (state.result.status === 'success') {
+                        jiraSync.checkCurrentPageLink();
+                    }
                     // Clear storage so it doesn't show again on next open
                     if (chrome?.storage?.local) {
                         chrome.storage.local.remove('activeSyncState');
@@ -121,6 +125,7 @@ const App: React.FC = () => {
                 setSyncProgress(100);
                 updateStatus({ text: 'Sync Complete!', type: 'success' });
                 checkPendingLink();
+                jiraSync.checkCurrentPageLink();
                 if (chrome?.storage?.local) {
                     chrome.storage.local.remove('activeSyncState');
                 }
@@ -221,7 +226,8 @@ const App: React.FC = () => {
                 });
                 docNameToLink = jiraSync.newDocTitle.trim();
             } else {
-                const found = drive.searchResults.find(d => d.id === drive.selectedDocId);
+                const found = drive.searchResults.find(d => d.id === drive.selectedDocId) ||
+                    drive.folders.find(d => d.id === drive.selectedDocId);
                 docNameToLink = found?.name || 'Linked Doc';
             }
 
@@ -244,7 +250,7 @@ const App: React.FC = () => {
         <div className="app-container">
             <header className="header">
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span className="version-badge">v9.5.20</span>
+                    <span className="version-badge">v9.5.21</span>
                     <button
                         onClick={() => jiraSync.checkCurrentPageLink()}
                         className="icon-btn"
