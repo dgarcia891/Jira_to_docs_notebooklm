@@ -54,7 +54,11 @@ export function useJiraSync() {
             setCurrentIssueTitle(keyData.title || key);
 
             if (keyData.childKeys && keyData.childKeys.length > 0) {
-                const combinedKeys = [key, ...keyData.childKeys].join(', ');
+                let combinedKeys = [key, ...keyData.childKeys].join(', ');
+                // Truncate if too long (Google Docs limit is approx 255 but we stay safer)
+                if (combinedKeys.length > 200) {
+                    combinedKeys = combinedKeys.substring(0, 197) + '...';
+                }
                 setNewDocTitle(combinedKeys);
             } else {
                 setNewDocTitle(keyData.title ? `${key}: ${keyData.title}` : key);

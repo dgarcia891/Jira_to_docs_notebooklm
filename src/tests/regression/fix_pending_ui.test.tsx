@@ -60,8 +60,14 @@ describe('Pending Link UI State', () => {
         });
     });
 
-    it('should show BOTH pending link and current link currently (Base Case)', async () => {
-        // Setup scenarios where we have BOTH a linked doc and a pending change
+    it('should show pending link UI and hide existing linked doc when pendingLink exists', async () => {
+        // 1. Mock storage to have a pending selection
+        (global.chrome.storage.local.get as any).mockImplementation(async (key: string) => {
+            if (key === 'selectedDoc') return { selectedDoc: { id: 'pending-id', name: 'Pending Document' } };
+            return {};
+        });
+
+        // 2. Mock useJiraSync to have an existing linked doc
         (useJiraSyncModule.useJiraSync as any).mockReturnValue({
             currentIssueKey: 'TEST-1',
             currentIssueTitle: 'Test Issue',
@@ -70,23 +76,51 @@ describe('Pending Link UI State', () => {
             checkCurrentPageLink: vi.fn(),
             refreshLastSync: vi.fn(),
             isEpic: false,
-            // We can't mock local state 'pendingLink' easily since it's inside App.
-            // But checking App.tsx line 188: setPendingLink is called after interaction.
-            // We might need to manipulate the component via interaction to set state.
         });
 
-        // Actually, 'pendingLink' is internal state.
-        // We need to trigger handleCreateAndLink logic to set it.
-        // Or specific testing-library tricks.
-        // For simplicity, we can just inspect the Code manually or mocking a setter if it was exposed? 
-        // No, it's internal.
-        // Let's trigger the UI flow:
-        // 1. Render
-        // 2. Click "Change Link"
-        // 3. Select a Doc
-        // 4. This triggers setPendingLink
+        await act(async () => {
+            render(<App />);
+        });
+
+        // 3. Verify Pending box is shown
+        expect(screen.getByText(/New Link Pending:/)).toBeDefined();
+        expect(screen.getByText(/Pending Document/)).toBeDefined();
+
+        // 4. Verify Old Linked Doc is NOT shown (regression check)
+        expect(screen.queryByText(/Old Document/)).toBeNull();
+        expect(screen.queryByText(/🔗 Linked Document/i)).toBeNull();
     });
 
-    // Instead of complex interaction, let's just analyze the result.
-    // The goal is to HIDE the green box if pending link is present.
+    it('should clear pending link when X is clicked', async () => {
+        // Setup same as above
+        (global.chrome.storage.local.get as any).mockImplementation(async (key: string) => {
+            if (key === 'selectedDoc') return { selectedDoc: { id: 'pending-id', name: 'Pending Document' } };
+            return {};
+        });
+
+        (useJiraSyncModule.useJiraSync as any).mockReturnValue({
+            currentIssueKey: 'TEST-1',
+            currentIssueTitle: 'Test Issue',
+            linkedDoc: null,
+            isLoadingLink: false,
+            checkCurrentPageLink: vi.fn(),
+            refreshLastSync: vi.fn(),
+            isEpic: false,
+        });
+
+        await act(async () => {
+            render(<App />);
+        });
+
+        const cancelButton = screen.getByTitle(/Cancel pending link/i);
+        expect(cancelButton).toBeDefined();
+
+        await act(async () => {
+            cancelButton.click();
+        });
+
+        // Verify storage remove was called
+        expect(global.chrome.storage.local.remove).toHaveBeenCalledWith('selectedDoc');
+        expect(global.chrome.runtime.sendMessage).toHaveBeenCalledWith({ type: 'REMOVE_SELECTED_DOC' });
+    });
 });

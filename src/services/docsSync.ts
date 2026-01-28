@@ -170,63 +170,7 @@ export class DocsSyncService {
             });
         }
 
-        let insertIndex = 1;
-
         // 3. Build cumulative content
-        for (const item of items) {
-            const commentsList = item.comments && item.comments.length > 0
-                ? item.comments.map(c => `[${c.timestamp || 'Unknown'}] ${c.author}: ${c.body.replace(/\*\*/g, '')}`).join('\n')
-                : '_No recent comments_';
-
-            const metadataBlock = [
-                `Status: ${item.status}`,
-                `Story Points: ${item.storyPoints || 'N/A'}`,
-                `Reporter: ${item.reporter || 'N/A'}`,
-                `Assignee: ${item.assignee || 'Unassigned'}`,
-                `Sprint History: ${item.sprints && item.sprints.length > 0 ? item.sprints.join(', ') : 'No Sprints'}`,
-                `T-Shirt Size: ${item.tShirtSize || 'N/A'}`,
-                `Work Type: ${item.workType || 'N/A'}`,
-                `Business Team: ${item.businessTeam || 'N/A'}`,
-                `Business Objective: ${item.businessObjective || 'N/A'}`,
-                `Impact: ${item.impact || 'N/A'}`,
-                `Labels: ${item.labels && item.labels.length > 0 ? item.labels.join(', ') : 'None'}`,
-                `Synced: ${formatDate(new Date())}`,
-                `Created: ${formatDate(item.createdDate)} | Updated: ${formatDate(item.updatedDate)}`
-            ].join('\n');
-
-            let linkedIssuesContent = '';
-            if (item.linkedIssues && item.linkedIssues.length > 0) {
-                linkedIssuesContent = `\nLinked Tickets:\n` +
-                    item.linkedIssues.map(li =>
-                        `* ${li.key}: ${li.title}\n` +
-                        `  - T-Shirt: ${li.tShirtSize || 'N/A'}\n` +
-                        `  - Context: ${li.rationale || 'N/A'}`
-                    ).join('\n');
-            }
-
-            const headerText = `${item.key}: ${item.title}`;
-            const bodyContent = `${metadataBlock}
-Link: ${item.url}
-
-Description
-${item.description}
-${linkedIssuesContent}
-
---------------------------------------------------
-Latest Comments
-${commentsList}
-
----
-\n`;
-
-            // Note: In Google Docs batchUpdate, requests are processed sequentially.
-            // But we need to insert at the end of what we just inserted.
-            // Actually, if we reverse the order, we can insert at fixed index 1,
-            // but it's easier to just generate a long string and insert once.
-            // Let's gather all text for all items and insert in one go to simplify index math.
-        }
-
-        // REVISED STRATEGY: Build one giant string for all items
         let fullDocumentText = '';
         const styles: { start: number, end: number, type: string }[] = [];
 

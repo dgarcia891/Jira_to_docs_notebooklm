@@ -9,7 +9,8 @@
 - **APIs**:
     - **Google Identity**: OAuth2 (Client-side)
     - **Google Docs API**: Direct REST calls via `fetch`
-    - **Jira**: DOM Scraping (No API integration detected)
+    - **Jira REST API v3**: Primary data source (via session cookies).
+    - **Jira DOM Scraping**: Secondary/Fallback for issue keys and UI buttons.
 
 ## 2. Core Data Flow
 

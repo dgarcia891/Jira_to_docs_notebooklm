@@ -1,5 +1,17 @@
 # Changelog
 
+## [9.5.12] - 2026-01-27
+### Added
+- **Premium UI Refactor**: Fully migrated from in-line styles to Vanilla CSS (`App.css`).
+- **Aesthetic Overhaul**: Added hover effects, micro-animations (fade-in, spin), and improved component layout for a more premium experience.
+- **Dynamic Naming Truncation**: Suggested document titles are now capped at 200 characters to prevent issues with Google Docs API limits when syncing large Epics.
+
+### Fixed
+- **Dead Code Removal**: Cleaned up legacy iteration logic in `docsSync.ts`.
+- **Documentation Correction**: Updated `architecture.md` to correctly reflect the Jira REST API v3 as the primary data source.
+- **Improved Testing**: Completed regression tests for the "Pending Link Cancel" UI.
+
+
 ## [9.5.11] - 2026-01-28
 ### Fixed
 - **DevEx**: Added a "Safety Loop" in the content script (dev mode only) to auto-reload the page when the extension context is invalidated, preventing HMR client crashes.

@@ -68,6 +68,6 @@ describe('Feature: Sync Persistence (Resume on Mount)', () => {
         // The progress bar should be visible even though handleSync was never called in the popup session
         expect(screen.getByText(/45%/)).toBeDefined();
         expect(screen.getByText(/Gathering metadata.../i)).toBeDefined();
-        expect(screen.getByText(/PROGRESS/)).toBeDefined();
+        expect(screen.getByText(/Progress/i)).toBeDefined();
     });
 });

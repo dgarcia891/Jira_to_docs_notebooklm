@@ -61,7 +61,7 @@ export function LinkingTabs({
     isEpic
 }: LinkingTabsProps) {
     return (
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }} className="fade-in">
             <div style={{ display: 'flex', borderBottom: '1px solid #ddd', marginBottom: '10px' }}>
                 <div
                     style={{ padding: '8px 15px', cursor: 'pointer', borderBottom: activeTab === 'all' ? '2px solid #0052cc' : 'none', fontWeight: activeTab === 'all' ? 'bold' : 'normal', flex: 1, textAlign: 'center' }}
@@ -80,9 +80,9 @@ export function LinkingTabs({
             {activeTab === 'all' ? (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                     <div>
-                        <label style={labelStyle}>Document Title</label>
+                        <label className="label">Document Title</label>
                         <input
-                            style={inputStyle}
+                            className="input"
                             value={newDocTitle}
                             onChange={(e) => setNewDocTitle(e.target.value)}
                             placeholder="Enter new document title..."
@@ -103,7 +103,8 @@ export function LinkingTabs({
                         </div>
                     )}
                     <button
-                        style={{ ...buttonStyle, background: syncChildren ? '#36b37e' : '#0052cc', marginTop: '5px' }}
+                        className={`btn ${syncChildren ? 'btn-success' : 'btn-primary'}`}
+                        style={{ marginTop: '5px' }}
                         onClick={() => handleCreateAndLink()}
                         disabled={isSyncing || !newDocTitle.trim()}
                     >
@@ -119,7 +120,8 @@ export function LinkingTabs({
                 <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
                     <div style={{ position: 'relative' }}>
                         <input
-                            style={{ ...inputStyle, paddingLeft: '30px' }}
+                            className="input"
+                            style={{ paddingLeft: '30px' }}
                             placeholder="Search docs or folders..."
                             value={searchQuery}
                             onChange={(e) => handleSearchDocs(e.target.value)}
@@ -143,7 +145,8 @@ export function LinkingTabs({
                     />
 
                     <button
-                        style={{ ...buttonStyle, marginTop: '10px' }}
+                        className="btn btn-primary"
+                        style={{ marginTop: '10px' }}
                         onClick={() => handleCreateAndLink()}
                         disabled={!selectedDocId || isSyncing}
                     >

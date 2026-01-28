@@ -5,7 +5,7 @@ import { useAuth } from './hooks/useAuth';
 import { useDrive } from './hooks/useDrive';
 import { useJiraSync } from './hooks/useJiraSync';
 import { useSettings } from './hooks/useSettings';
-import * as styles from './styles/popup';
+import './App.css';
 
 import { ProgressBar } from './components/popup/ProgressBar';
 
@@ -206,65 +206,32 @@ const App: React.FC = () => {
         }
     };
 
-    if (!auth.isAuthenticated) {
-        return (
-            <div style={styles.containerStyle}>
-                <h2 style={{ margin: '0 0 20px 0', textAlign: 'center' }}>Jira Connector</h2>
-                <div style={{ padding: '20px', textAlign: 'center', background: '#F4F5F7', borderRadius: '8px' }}>
-                    <p style={{ fontSize: '14px', color: '#42526E', marginBottom: '20px' }}>
-                        Connect your Google account to sync Jira issues directly to NotebookLM.
-                    </p>
-                    <button onClick={auth.handleLogin} style={styles.buttonStyle}>
-                        Sign in with Google
-                    </button>
-                </div>
-                {status && (
-                    <div style={{ marginTop: '20px' }}>
-                        <StatusBanners
-                            status={status}
-                            getStatusBackgroundColor={styles.getStatusBackgroundColor}
-                            getStatusColor={styles.getStatusColor}
-                            onClose={() => updateStatus(null)}
-                        />
-                    </div>
-                )}
-            </div>
-        );
-    }
-
-    if (jiraSync.isLoadingLink) {
-        return (
-            <div style={styles.containerStyle}>
-                <div style={{ textAlign: 'center', padding: '40px 20px' }}>
-                    <div style={{ fontSize: '24px', marginBottom: '10px' }}>🔄</div>
-                    <div style={{ fontSize: '14px', color: '#6B778C' }}>Loading page info...</div>
-                </div>
-            </div>
-        );
-    }
-
     return (
-        <div style={styles.containerStyle}>
-
-            <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+        <div className="app-container">
+            <header className="header">
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span style={{ fontSize: '10px', color: '#6B778C', fontWeight: 'bold' }}>v9.5.11</span>
+                    <span className="version-badge">v9.5.12</span>
                     <button
                         onClick={() => jiraSync.checkCurrentPageLink()}
+                        className="icon-btn"
                         title="Refresh page info"
-                        style={{ ...styles.textLinkStyle, padding: 0, textDecoration: 'none', fontSize: '14px' }}
+                        disabled={isSyncing}
                     >
                         🔄
                     </button>
                 </div>
-                <h2 style={{ fontSize: '18px', margin: 0, color: '#172B4D' }}>Jira Connector</h2>
-                <button onClick={auth.handleLogout} style={{ ...styles.secondaryButtonStyle, marginTop: 0, padding: '4px 8px' }}>Logout</button>
+                {auth.isAuthenticated && (
+                    <button
+                        onClick={auth.handleLogout}
+                        className="text-link"
+                    >
+                        Logout
+                    </button>
+                )}
             </header>
 
             <StatusBanners
                 status={status}
-                getStatusBackgroundColor={styles.getStatusBackgroundColor}
-                getStatusColor={styles.getStatusColor}
                 onClose={() => updateStatus(null)}
             />
 
@@ -272,8 +239,25 @@ const App: React.FC = () => {
                 <ProgressBar progress={syncProgress} status={syncStatusText} />
             )}
 
-            {!jiraSync.currentIssueKey ? (
-                <div style={{ padding: '20px', background: '#DEEBFF', borderRadius: '8px', textAlign: 'center' }}>
+            {!auth.isAuthenticated ? (
+                <div style={{ textAlign: 'center', paddingTop: '40px' }} className="fade-in">
+                    <h2 style={{ marginBottom: '20px' }}>Jira to NotebookLM</h2>
+                    <p style={{ color: '#666', marginBottom: '30px' }}>Connect your Google account to start syncing Jira issues to Docs.</p>
+                    <button
+                        onClick={auth.handleLogin}
+                        className="btn btn-primary"
+                        style={{ width: '100%' }}
+                    >
+                        Login with Google
+                    </button>
+                </div>
+            ) : jiraSync.isLoadingLink ? (
+                <div className="loading-state">
+                    <div style={{ fontSize: '24px', marginBottom: '10px' }}>🔄</div>
+                    <div style={{ fontSize: '14px', color: '#6B778C' }}>Loading page info...</div>
+                </div>
+            ) : !jiraSync.currentIssueKey ? (
+                <div className="card card-info-blue">
                     <div style={{ fontSize: '24px', marginBottom: '10px' }}>ℹ️</div>
                     <p style={{ fontSize: '13px', color: '#0747A6', margin: 0 }}>
                         Navigate to a Jira issue page to start syncing.
@@ -301,16 +285,16 @@ const App: React.FC = () => {
                     syncChildren={syncChildren}
                     setSyncChildren={setSyncChildren}
                     handleCreateAndLink={handleCreateAndLink}
-                    labelStyle={styles.labelStyle}
-                    inputStyle={styles.inputStyle}
-                    buttonStyle={styles.buttonStyle}
+                    labelStyle={{}}
+                    inputStyle={{}}
+                    buttonStyle={{}}
                     isEpic={jiraSync.isEpic}
                 />
             ) : (
-                <div>
+                <div className="fade-in">
                     <div style={{ marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                         <div>
-                            <div style={{ fontSize: '12px', color: '#6B778C', marginBottom: '4px' }}>CURRENT ISSUE</div>
+                            <div className="label">Current Issue</div>
                             <div style={{ fontSize: '16px', fontWeight: 'bold', color: '#172B4D' }}>
                                 {jiraSync.currentIssueKey}: {jiraSync.currentIssueTitle}
                             </div>
@@ -319,39 +303,20 @@ const App: React.FC = () => {
                             onClick={handleCopy}
                             title="Copy issue details"
                             disabled={isSyncing}
-                            style={{
-                                ...styles.iconButtonStyle,
-                                opacity: isSyncing ? 0.5 : 1,
-                                padding: '6px'
-                            }}
+                            className="icon-btn"
                         >
                             📋
                         </button>
                     </div>
 
                     {pendingLink && (
-                        <div style={{
-                            marginBottom: '15px',
-                            padding: '10px',
-                            background: '#FFF0B3',
-                            borderRadius: '8px',
-                            border: '1px solid #FFC400',
-                            color: '#172B4D',
-                            fontSize: '13px'
-                        }}>
+                        <div className="card card-pending">
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                 <div>New Link Pending: <b>{pendingLink.name}</b></div>
                                 <button
                                     onClick={handleCancelPending}
-                                    style={{
-                                        background: 'none',
-                                        border: 'none',
-                                        cursor: 'pointer',
-                                        fontSize: '14px',
-                                        padding: '0 4px',
-                                        color: '#172B4D',
-                                        opacity: 0.6
-                                    }}
+                                    className="icon-btn"
+                                    style={{ padding: '0 4px', fontSize: '14px' }}
                                     title="Cancel pending link"
                                 >
                                     ✕
@@ -362,13 +327,7 @@ const App: React.FC = () => {
                     )}
 
                     {jiraSync.linkedDoc && !pendingLink ? (
-                        <div style={{
-                            marginBottom: '20px',
-                            padding: '12px',
-                            background: '#E3FCEF',
-                            borderRadius: '8px',
-                            border: '1px solid #36B37E'
-                        }}>
+                        <div className="card card-info">
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                                 <div>
                                     <div style={{ fontSize: '11px', fontWeight: 'bold', color: '#006644', textTransform: 'uppercase' }}>🔗 Linked Document</div>
@@ -378,11 +337,9 @@ const App: React.FC = () => {
                                     href={`https://docs.google.com/document/d/${jiraSync.linkedDoc.id || (jiraSync.linkedDoc as any).docId}`}
                                     target="_blank"
                                     rel="noreferrer"
+                                    className="text-link"
                                     style={{
-                                        fontSize: '11px',
                                         color: '#006644',
-                                        fontWeight: 'bold',
-                                        textDecoration: 'underline',
                                         background: '#E3FCEF',
                                         padding: '4px 8px',
                                         borderRadius: '4px',
@@ -399,7 +356,7 @@ const App: React.FC = () => {
                             )}
                         </div>
                     ) : (
-                        <div style={{ marginBottom: '20px', padding: '12px', background: '#FFF7E6', borderRadius: '8px', border: '1px solid #FFAB00' }}>
+                        <div className="card card-warning">
                             <div style={{ fontSize: '12px', color: '#824100' }}>No document linked yet.</div>
                         </div>
                     )}
@@ -408,13 +365,8 @@ const App: React.FC = () => {
                         <button
                             onClick={handleSync}
                             disabled={isSyncing}
-                            style={{
-                                ...styles.buttonStyle,
-                                marginTop: 0,
-                                flex: 1,
-                                backgroundColor: (jiraSync.lastSyncType === 'single' || !jiraSync.lastSyncType) ? '#0052CC' : '#EBECF0',
-                                color: (jiraSync.lastSyncType === 'single' || !jiraSync.lastSyncType) ? 'white' : '#42526E'
-                            }}
+                            className={`btn ${(jiraSync.lastSyncType === 'single' || !jiraSync.lastSyncType) ? 'btn-primary' : 'btn-secondary'}`}
+                            style={{ flex: 1 }}
                         >
                             {isSyncing ? 'Syncing...' : (!jiraSync.linkedDoc && !pendingLink) ? 'Link & Sync' : 'Sync Individual'}
                         </button>
@@ -423,13 +375,8 @@ const App: React.FC = () => {
                             <button
                                 onClick={handleEpicSync}
                                 disabled={isSyncing}
-                                style={{
-                                    ...styles.buttonStyle,
-                                    marginTop: 0,
-                                    flex: 1,
-                                    backgroundColor: (jiraSync.lastSyncType === 'bulk') ? '#0052CC' : '#EBECF0',
-                                    color: (jiraSync.lastSyncType === 'bulk') ? 'white' : '#42526E'
-                                }}
+                                className={`btn ${(jiraSync.lastSyncType === 'bulk') ? 'btn-primary' : 'btn-secondary'}`}
+                                style={{ flex: 1 }}
                             >
                                 {isSyncing ? 'Syncing...' : 'Sync All'}
                             </button>
@@ -439,13 +386,13 @@ const App: React.FC = () => {
                     <div style={{ marginTop: '30px', display: 'flex', justifyContent: 'center', gap: '15px', borderTop: '1px solid #EBECF0', paddingTop: '15px' }}>
                         <button
                             onClick={() => setShowLinkingOptions(true)}
-                            style={styles.textLinkStyle}
+                            className="text-link"
                         >
                             Change Link
                         </button>
                         <button
                             onClick={() => chrome.runtime.openOptionsPage()}
-                            style={styles.textLinkStyle}
+                            className="text-link"
                         >
                             Settings
                         </button>
