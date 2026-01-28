@@ -126,12 +126,18 @@ const App: React.FC = () => {
         }
     };
 
-    const handleHardRefresh = async () => {
+    const handleCopy = async () => {
+        setIsSyncing(true);
+        setSyncStatusText('Extracting for copy...');
         try {
-            await chrome.runtime.sendMessage({ type: 'REFRESH_TAB' });
-            window.close(); // Close popup as the page is reloading
-        } catch (err) {
-            console.error('Hard refresh failed:', err);
+            const text = await chrome.runtime.sendMessage({ type: 'EXTRACT_FOR_COPY' });
+            await navigator.clipboard.writeText(text);
+            updateStatus({ text: 'Copied to clipboard!', type: 'success' });
+        } catch (err: any) {
+            updateStatus({ text: `Copy failed: ${err.message}`, type: 'error' });
+        } finally {
+            setIsSyncing(false);
+            setSyncStatusText('');
         }
     };
 
@@ -210,20 +216,13 @@ const App: React.FC = () => {
 
             <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span style={{ fontSize: '10px', color: '#6B778C', fontWeight: 'bold' }}>v4.8.32</span>
+                    <span style={{ fontSize: '10px', color: '#6B778C', fontWeight: 'bold' }}>v4.8.31</span>
                     <button
                         onClick={() => jiraSync.checkCurrentPageLink()}
                         title="Refresh page info"
-                        style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', fontSize: '14px', padding: '0 4px' }}
+                        style={{ ...styles.textLinkStyle, padding: 0, textDecoration: 'none', fontSize: '14px' }}
                     >
                         🔄
-                    </button>
-                    <button
-                        onClick={handleHardRefresh}
-                        title="Reload Browser Page"
-                        style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', fontSize: '14px', padding: '0 4px', opacity: 0.7 }}
-                    >
-                        ♿️
                     </button>
                 </div>
                 <h2 style={{ fontSize: '18px', margin: 0, color: '#172B4D' }}>Jira Connector</h2>
@@ -277,11 +276,25 @@ const App: React.FC = () => {
                 />
             ) : (
                 <div>
-                    <div style={{ marginBottom: '20px' }}>
-                        <div style={{ fontSize: '12px', color: '#6B778C', marginBottom: '4px' }}>CURRENT ISSUE</div>
-                        <div style={{ fontSize: '16px', fontWeight: 'bold', color: '#172B4D' }}>
-                            {jiraSync.currentIssueKey}: {jiraSync.currentIssueTitle}
+                    <div style={{ marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                        <div>
+                            <div style={{ fontSize: '12px', color: '#6B778C', marginBottom: '4px' }}>CURRENT ISSUE</div>
+                            <div style={{ fontSize: '16px', fontWeight: 'bold', color: '#172B4D' }}>
+                                {jiraSync.currentIssueKey}: {jiraSync.currentIssueTitle}
+                            </div>
                         </div>
+                        <button
+                            onClick={handleCopy}
+                            title="Copy issue details"
+                            disabled={isSyncing}
+                            style={{
+                                ...styles.iconButtonStyle,
+                                opacity: isSyncing ? 0.5 : 1,
+                                padding: '6px'
+                            }}
+                        >
+                            📋
+                        </button>
                     </div>
 
                     {jiraSync.linkedDoc ? (
@@ -350,7 +363,7 @@ const App: React.FC = () => {
                                     ...styles.buttonStyle,
                                     marginTop: 0,
                                     flex: 1,
-                                    backgroundColor: (!jiraSync.lastSyncType || jiraSync.lastSyncType === 'bulk') ? '#0065FF' : '#EBECF0',
+                                    backgroundColor: (!jiraSync.lastSyncType || jiraSync.lastSyncType === 'bulk') ? '#0052CC' : '#EBECF0',
                                     color: (!jiraSync.lastSyncType || jiraSync.lastSyncType === 'bulk') ? 'white' : '#42526E'
                                 }}
                             >

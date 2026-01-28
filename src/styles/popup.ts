@@ -92,3 +92,16 @@ export const textLinkStyle: React.CSSProperties = {
     textDecoration: 'underline',
     padding: '4px 8px',
 };
+
+export const iconButtonStyle: React.CSSProperties = {
+    background: '#F4F5F7',
+    border: '1px solid #DFE1E6',
+    borderRadius: '4px',
+    padding: '4px 8px',
+    cursor: 'pointer',
+    fontSize: '14px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    transition: 'all 0.2s ease',
+};

@@ -1,5 +1,5 @@
 /// <reference types="vitest" />
-import { defineConfig } from 'vite'
+import { defineConfig } from 'vitest/config'
 import react from '@vitejs/plugin-react'
 import { crx } from '@crxjs/vite-plugin'
 import manifest from './src/manifest.json'
@@ -10,6 +10,14 @@ export default defineConfig({
         react(),
         crx({ manifest }),
     ],
+    server: {
+        port: 5173,
+        strictPort: true,
+        cors: true,
+        hmr: {
+            port: 5173,
+        },
+    },
     test: {
         globals: true,
         environment: 'jsdom',

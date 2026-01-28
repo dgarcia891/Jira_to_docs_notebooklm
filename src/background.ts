@@ -2,7 +2,7 @@ import { GoogleAuthService, parseTokenFromUrl } from './services/googleAuth';
 import { DocsSyncService } from './services/docsSync';
 import { JiraParser } from './parsers/jira';
 import { BackgroundMessage, ContentResponse } from './types/messages';
-import { normalizeDoc } from './utils/docUtils';
+import { normalizeDoc, formatWorkItemToText } from './utils/docUtils';
 
 const jiraParser = new JiraParser();
 
@@ -144,14 +144,17 @@ async function handleMessage(message: BackgroundMessage, retryCount = 0): Promis
                 return true;
             }
 
-            case 'REFRESH_TAB': {
-                const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-                if (tab?.id) await chrome.tabs.reload(tab.id);
-                return { success: true };
-            }
-
             case 'SYNC_CURRENT_PAGE':
                 return await handleSync();
+
+            case 'EXTRACT_FOR_COPY': {
+                const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+                if (!tab?.id) throw new Error('No active tab found.');
+                const response = await chrome.tabs.sendMessage(tab.id, { type: 'EXTRACT_ISSUE' }) as ContentResponse;
+                if (response.type === 'EXTRACT_ERROR') throw new Error(response.error);
+                if (response.type !== 'EXTRACT_SUCCESS') throw new Error('Failed to extract issue.');
+                return formatWorkItemToText(response.payload);
+            }
 
             case 'SYNC_EPIC':
                 return await handleEpicSync(message.payload.epicKey);

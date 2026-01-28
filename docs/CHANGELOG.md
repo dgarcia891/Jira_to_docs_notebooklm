@@ -1,9 +1,24 @@
 # Changelog
 
-## [4.8.32] - 2026-01-27
+## [9.5.1] - 2026-01-27
+### Fixed
+- **Service Worker CORS**: Enabled CORS on Vite dev server to allow `chrome-extension://` origins to fetch environment and HMR scripts, resolving registration failures (Status code: 3).
+
+## [9.5.0] - 2026-01-27
 ### Added
-- **Hard Refresh**: Added a new button ♿️ (Reload Page) to the header that performs a full browser tab reload. Useful if Jira becomes unresponsive or background context is lost.
-- **Improved UI Layout**: Refined header layout to accommodate multiple action buttons.
+- **Visual Swarm Protocol**: Integrated browser-agent verification requirements for UI tasks.
+- **Visual Tooling**: Added `scripts/visual_check.js` and `artifacts/verification/` directory.
+- **Swarm Roles**: Defined Architect, Builder, and Photographer roles in `.agent/rules/swarm_roles.md`.
+### Changed
+- **Identity Upgrade**: Synced system version to `v9.5-CHROME-VISUAL` and updated identity beacons.
+- **Core Standards**: Mandated visual proof for UI verification in `.agent/rules/core_standards.md`.
+- **Workflow Overhaul**: Updated `/fix` workflow for context-aware logic and visual branching.
+- **UI Fix**: Standardized popup button colors to Atlassian Primary Blue (`#0052CC`), resolving inconsistency between individual and bulk sync buttons.
+
+## [7.5.0] - 2026-01-27
+### Changed
+- **Recall Engine Upgrade**: Overhauled `scripts/consult.cjs` to explicitly target `LESSONS_LEARNED.md`, `BUG_LOG.md`, and `architecture.md` for deeper active recall.
+- **Identity Alignment**: Synced internal identity beacon to `v7.5` to match system version and protocol standards.
 
 ## [4.8.31] - 2026-01-27
 ### Fixed
