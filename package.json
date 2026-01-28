@@ -1,6 +1,6 @@
 {
   "name": "jira-to-notebooklm-chrome-extension",
-  "version": "9.5.18",
+  "version": "9.5.19",
   "description": "Chrome extension to sync Jira issues to Google Docs for NotebookLM",
   "main": "index.js",
   "directories": {

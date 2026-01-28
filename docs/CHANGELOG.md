@@ -1,5 +1,10 @@
 # Changelog
 
+## [9.5.19] - 2026-01-28
+### Fixed
+- **Drive Visibility**: Fixed critical bug where "Browse Folders" would show "This folder is empty" due to an API message type mismatch.
+
+
 ## [9.5.18] - 2026-01-28
 ### Fixed
 - **State Pollution**: Fixed bug where "Synced" banners would persist across different Jira issues. Added strict key matching to ensure banners only show for the relevant issue.
