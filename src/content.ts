@@ -6,6 +6,23 @@ console.log('Jira to NotebookLM: Content script loaded');
 
 const parser = new JiraParser();
 
+// Development Aid: Auto-reload page when extension reloads/invalidates
+// This prevents "Extension context invalidated" errors in the HMR client
+if (import.meta.env.MODE === 'development') {
+    setInterval(() => {
+        try {
+            if (!chrome.runtime?.id) {
+                console.log('[Dev] Extension context invalidated. Reloading page...');
+                window.location.reload();
+            }
+        } catch (e) {
+            // Accessing chrome.runtime might throw if fully invalidated
+            console.log('[Dev] Extension context lost. Reloading page...');
+            window.location.reload();
+        }
+    }, 1000);
+}
+
 chrome.runtime.onMessage.addListener((message: ContentMessage | { type: 'GET_ISSUE_KEY' }, sender, sendResponse) => {
     if (message.type === 'EXTRACT_ISSUE') {
         handleExtraction().then(sendResponse);
