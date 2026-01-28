@@ -23,7 +23,7 @@ export function useDrive() {
 
     const loadFolders = useCallback(async (parentId: string) => {
         try {
-            const response = await chrome.runtime.sendMessage({ type: 'LIST_FOLDERS', payload: { parentId } });
+            const response = await chrome.runtime.sendMessage({ type: 'LIST_DRIVE_FOLDERS', payload: { parentId } });
             if (response && Array.isArray(response)) {
                 setFolders(response);
             }

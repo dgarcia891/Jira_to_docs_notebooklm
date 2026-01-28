@@ -24,3 +24,6 @@
 
 ### State Management
 - **Cross-Context Pollution**: Global storage keys (like `activeSyncState` or `selectedDoc`) can persist across different contexts (e.g., navigating from Jira Issue A to Issue B). Always validate that state belongs to the *current* context (check `key === currentKey`) before displaying it, and clean up transient state (like `selectedDoc`) on mount (with strict environment checks) to ensure a fresh session.
+
+### API Consistency
+- **Message Type Mismatches**: Ensure that message types sent from React hooks (e.g., `useDrive`) exactly match the types expected by `background.ts` listeners defined in `switch` statements. Using shared constants for message types is recommended to prevent typos like `LIST_FOLDERS` vs `LIST_DRIVE_FOLDERS`.
