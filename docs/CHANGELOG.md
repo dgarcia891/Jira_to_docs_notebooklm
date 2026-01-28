@@ -1,5 +1,10 @@
 # Changelog
 
+## [9.5.15] - 2026-01-27
+### Added
+- **Deployment**: Official version bump for finalized UI/UX improvements.
+
+
 ## [9.5.14] - 2026-01-27
 ### Fixed
 - **UI Logic**: Eliminated "New Link Pending" and "No document linked" card overlap. Only the most relevant card is now shown.
