@@ -1,5 +1,12 @@
 # Changelog
 
+## [9.5.18] - 2026-01-28
+### Fixed
+- **State Pollution**: Fixed bug where "Synced" banners would persist across different Jira issues. Added strict key matching to ensure banners only show for the relevant issue.
+- **Data Safety**: Implemented automatic cleanup of stale "Pending Link" (selectedDoc) state on popup open to prevent accidental linking of new issues to old documents.
+- **Test Stability**: Hardened test setup with robust global chrome mocks.
+
+
 ## [9.5.17] - 2026-01-28
 ### Added
 - **Deployment**: Official version bump for HMR fix and recent UI improvements.

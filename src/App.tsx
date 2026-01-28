@@ -14,6 +14,7 @@ interface SyncState {
     progress: number;
     status: string;
     result?: { status: string; message: string; time: number };
+    key?: string;
 }
 
 const App: React.FC = () => {
@@ -49,7 +50,13 @@ const App: React.FC = () => {
     const resumeSyncState = useCallback(async () => {
         const result = await chrome.storage.local.get('activeSyncState');
         const activeSyncState = result.activeSyncState as SyncState | undefined;
+
         if (activeSyncState) {
+            // Strict Check: Only show state if it matches current issue or is generic 'pending'
+            if (activeSyncState.key && activeSyncState.key !== jiraSync.currentIssueKey && activeSyncState.key !== 'pending') {
+                return;
+            }
+
             setIsSyncing(activeSyncState.isSyncing);
             setSyncProgress(activeSyncState.progress);
             setSyncStatusText(activeSyncState.status);
@@ -63,9 +70,18 @@ const App: React.FC = () => {
                 await chrome.storage.local.remove('activeSyncState');
             }
         }
-    }, [updateStatus]);
+    }, [updateStatus, jiraSync.currentIssueKey]);
 
     useEffect(() => {
+        // Cleanup stale selection state on mount to prevent cross-issue pollution
+        try {
+            if (typeof chrome !== 'undefined' && chrome?.storage?.local?.remove) {
+                chrome.storage.local.remove('selectedDoc').catch(() => { });
+            }
+        } catch (e) {
+            // Ignore errors in environments where chrome is not defined
+        }
+
         auth.checkAuth();
         jiraSync.checkCurrentPageLink();
         resumeSyncState();
@@ -78,6 +94,12 @@ const App: React.FC = () => {
         const listener = (msg: any) => {
             if (msg.type === 'SYNC_STATE_UPDATE') {
                 const state = msg.payload;
+
+                // Strict Check: Ignore updates for other issues
+                if (state.key && state.key !== jiraSync.currentIssueKey && state.key !== 'pending') {
+                    return;
+                }
+
                 setIsSyncing(state.isSyncing);
                 setSyncProgress(state.progress);
                 setSyncStatusText(state.status);
@@ -222,7 +244,7 @@ const App: React.FC = () => {
         <div className="app-container">
             <header className="header">
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span className="version-badge">v9.5.17</span>
+                    <span className="version-badge">v9.5.18</span>
                     <button
                         onClick={() => jiraSync.checkCurrentPageLink()}
                         className="icon-btn"

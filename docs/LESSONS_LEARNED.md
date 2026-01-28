@@ -18,3 +18,9 @@
 
 ### Development Experience
 - **HMR & Extension Context**: When developing Chrome Extensions with HMR, frequent reloads invalidate the extension context, causing 'Uncaught Error: Extension context invalidated' in the injected client. A simple global error boundary in the content script (dev-mode only) effectively silences these errors by triggering a clean page reload, mimicking the intended behavior.
+
+### State Management
+- **Cross-Context Pollution**: Global storage keys (like `activeSyncState` or `selectedDoc`) can persist across different contexts (e.g., navigating from Jira Issue A to Issue B). Always validate that state belongs to the *current* context (check `key === currentKey`) before displaying it, and clean up transient state (like `selectedDoc`) on mount to ensure a fresh session.
+
+### State Management
+- **Cross-Context Pollution**: Global storage keys (like `activeSyncState` or `selectedDoc`) can persist across different contexts (e.g., navigating from Jira Issue A to Issue B). Always validate that state belongs to the *current* context (check `key === currentKey`) before displaying it, and clean up transient state (like `selectedDoc`) on mount (with strict environment checks) to ensure a fresh session.
