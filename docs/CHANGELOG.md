@@ -1,5 +1,9 @@
 # Changelog
 
+## [9.5.11] - 2026-01-28
+### Fixed
+- **DevEx**: Added a "Safety Loop" in the content script (dev mode only) to auto-reload the page when the extension context is invalidated, preventing HMR client crashes.
+
 ## [9.5.10] - 2026-01-28
 ### Fixed
 - **Authentication Resilience**: Upgraded HMR client dependency to fix "Extension context invalidated" errors during development reloads.

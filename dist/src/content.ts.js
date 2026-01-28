@@ -1,6 +1,19 @@
-import { JiraParser } from "/src/parsers/jira.ts.js";
+import.meta.env = {"BASE_URL": "/", "DEV": true, "MODE": "development", "PROD": false, "SSR": false};import { JiraParser } from "/src/parsers/jira.ts.js";
 console.log("Jira to NotebookLM: Content script loaded");
 const parser = new JiraParser();
+if (import.meta.env.MODE === "development") {
+  setInterval(() => {
+    try {
+      if (!chrome.runtime?.id) {
+        console.log("[Dev] Extension context invalidated. Reloading page...");
+        window.location.reload();
+      }
+    } catch (e) {
+      console.log("[Dev] Extension context lost. Reloading page...");
+      window.location.reload();
+    }
+  }, 1e3);
+}
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.type === "EXTRACT_ISSUE") {
     handleExtraction().then(sendResponse);
