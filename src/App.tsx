@@ -216,7 +216,7 @@ const App: React.FC = () => {
 
             <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span style={{ fontSize: '10px', color: '#6B778C', fontWeight: 'bold' }}>v4.8.31</span>
+                    <span style={{ fontSize: '10px', color: '#6B778C', fontWeight: 'bold' }}>v9.5.1</span>
                     <button
                         onClick={() => jiraSync.checkCurrentPageLink()}
                         title="Refresh page info"
