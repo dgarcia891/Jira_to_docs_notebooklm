@@ -216,7 +216,7 @@ const App: React.FC = () => {
 
             <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span style={{ fontSize: '10px', color: '#6B778C', fontWeight: 'bold' }}>v9.5.1</span>
+                    <span style={{ fontSize: '10px', color: '#6B778C', fontWeight: 'bold' }}>v9.5.2</span>
                     <button
                         onClick={() => jiraSync.checkCurrentPageLink()}
                         title="Refresh page info"
@@ -348,8 +348,8 @@ const App: React.FC = () => {
                                 ...styles.buttonStyle,
                                 marginTop: 0,
                                 flex: 1,
-                                backgroundColor: (!jiraSync.lastSyncType || jiraSync.lastSyncType === 'single') ? '#0052CC' : '#EBECF0',
-                                color: (!jiraSync.lastSyncType || jiraSync.lastSyncType === 'single') ? 'white' : '#42526E'
+                                backgroundColor: (jiraSync.lastSyncType === 'single' || !jiraSync.lastSyncType) ? '#0052CC' : '#EBECF0',
+                                color: (jiraSync.lastSyncType === 'single' || !jiraSync.lastSyncType) ? 'white' : '#42526E'
                             }}
                         >
                             {isSyncing ? 'Syncing...' : 'Sync Individual'}
@@ -363,8 +363,8 @@ const App: React.FC = () => {
                                     ...styles.buttonStyle,
                                     marginTop: 0,
                                     flex: 1,
-                                    backgroundColor: (!jiraSync.lastSyncType || jiraSync.lastSyncType === 'bulk') ? '#0052CC' : '#EBECF0',
-                                    color: (!jiraSync.lastSyncType || jiraSync.lastSyncType === 'bulk') ? 'white' : '#42526E'
+                                    backgroundColor: (jiraSync.lastSyncType === 'bulk') ? '#0052CC' : '#EBECF0',
+                                    color: (jiraSync.lastSyncType === 'bulk') ? 'white' : '#42526E'
                                 }}
                             >
                                 {isSyncing ? 'Syncing...' : 'Sync All'}

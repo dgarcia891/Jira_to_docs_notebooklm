@@ -2,6 +2,7 @@
 
 ## UI & Branding
 - **Color Consistency**: Always use `#0052CC` for primary Atlassian-style buttons. Avoid using variations like `#0065FF` unless a specific intentional deviation is required (e.g., hover states or distinct action categories).
+- **Primary Action Hierarchy**: In UIs with multiple action buttons, ensure only one button is styled as "Primary" (Blue) to guide the user. Use conditional logic to toggle primary states based on the most relevant recent action.
 - **Visual Verification**: Use the Visual Swarm protocol (Browser Agent) to verify UI changes that cannot be caught by unit tests.
 
 ## Development Environment

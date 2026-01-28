@@ -1,5 +1,9 @@
 # Changelog
 
+## [9.5.2] - 2026-01-27
+### Fixed
+- **UI Interaction**: Standardized sync button highlights to ensure only one primary action is visible at a time. Defaulted to "Sync Individual" for new issues or single-sync history.
+
 ## [9.5.1] - 2026-01-27
 ### Fixed
 - **Service Worker CORS**: Enabled CORS on Vite dev server to allow `chrome-extension://` origins to fetch environment and HMR scripts, resolving registration failures (Status code: 3).
