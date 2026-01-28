@@ -1,5 +1,15 @@
 # Changelog
 
+## [9.5.3] - 2026-01-27
+### Fixed
+- **Change Link Workflow**: Explicitly clear `selectedDoc` from storage after a sync operation to prevent "sticky link" behavior where new selections were ignored.
+- **Title Formatting**: Updated default document title to "KEY: Title" (e.g., "PROJ-123: Fix Login") instead of just "Title".
+
+## [9.5.3] - 2026-01-27
+### Fixed
+- **Change Link Workflow**: Explicitly clear `selectedDoc` from storage after a sync operation to prevent "sticky link" behavior where new selections were ignored.
+- **Title Formatting**: Updated default document title to "KEY: Title" (e.g., "PROJ-123: Fix Login") instead of just "Title".
+
 ## [9.5.2] - 2026-01-27
 ### Fixed
 - **UI Interaction**: Standardized sync button highlights to ensure only one primary action is visible at a time. Defaulted to "Sync Individual" for new issues or single-sync history.

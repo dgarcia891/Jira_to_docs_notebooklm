@@ -57,7 +57,7 @@ export function useJiraSync() {
                 const combinedKeys = [key, ...keyData.childKeys].join(', ');
                 setNewDocTitle(combinedKeys);
             } else {
-                setNewDocTitle(keyData.title || key);
+                setNewDocTitle(keyData.title ? `${key}: ${keyData.title}` : key);
             }
 
             if (keyData.type) {

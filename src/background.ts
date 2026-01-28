@@ -244,14 +244,18 @@ async function handleSync() {
         const links = await getIssueDocLinks();
         let targetDoc: { id: string; name: string };
 
-        if (links[issueKey]) {
-            targetDoc = links[issueKey];
-        } else {
-            const { selectedDoc } = await chrome.storage.local.get('selectedDoc') as { selectedDoc?: { id: string; name: string } };
-            if (!selectedDoc) throw new Error('No target Document selected. Select one to link this issue.');
+        const { selectedDoc } = await chrome.storage.local.get('selectedDoc') as { selectedDoc?: { id: string; name: string } };
+
+        if (selectedDoc) {
             targetDoc = selectedDoc;
             links[issueKey] = targetDoc;
             await chrome.storage.local.set({ issueDocLinks: links });
+            // Clear selectedDoc so it doesn't stick for other issues
+            await chrome.storage.local.remove('selectedDoc');
+        } else if (links[issueKey]) {
+            targetDoc = links[issueKey];
+        } else {
+            throw new Error('No target Document selected. Select one to link this issue.');
         }
 
         await updateSyncState({ isSyncing: true, progress: 60, status: `Syncing ${issueKey} to Google Docs...`, key: issueKey });
