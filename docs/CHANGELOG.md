@@ -1,5 +1,11 @@
 # Changelog
 
+## [9.5.14] - 2026-01-27
+### Fixed
+- **UI Logic**: Eliminated "New Link Pending" and "No document linked" card overlap. Only the most relevant card is now shown.
+- **UX Feedback**: Added immediate "Preparing document..." feedback (5% progress) when clicking "Link & Sync" to prevent the UI from appearing stuck at 0% during Doc creation.
+
+
 ## [9.5.13] - 2026-01-27
 ### Fixed
 - **UI Layout**: Fixed excessive whitespace regression in popup by reducing `min-height` to 320px.

@@ -185,6 +185,8 @@ const App: React.FC = () => {
     const handleCreateAndLink = async (forceSyncChildren?: boolean) => {
         if (!jiraSync.currentIssueKey) return;
         setIsSyncing(true);
+        setSyncProgress(5);
+        setSyncStatusText('Preparing document...');
         try {
             let docIdToLink = drive.selectedDocId;
             let docNameToLink = '';
@@ -220,7 +222,7 @@ const App: React.FC = () => {
         <div className="app-container">
             <header className="header">
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span className="version-badge">v9.5.13</span>
+                    <span className="version-badge">v9.5.14</span>
                     <button
                         onClick={() => jiraSync.checkCurrentPageLink()}
                         className="icon-btn"
@@ -319,7 +321,7 @@ const App: React.FC = () => {
                         </button>
                     </div>
 
-                    {pendingLink && (
+                    {pendingLink ? (
                         <div className="card card-pending">
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                 <div>New Link Pending: <b>{pendingLink.name}</b></div>
@@ -334,9 +336,7 @@ const App: React.FC = () => {
                             </div>
                             <div style={{ fontSize: '11px', marginTop: '4px', opacity: 0.8 }}>Sync to confirm and save this link.</div>
                         </div>
-                    )}
-
-                    {jiraSync.linkedDoc && !pendingLink ? (
+                    ) : jiraSync.linkedDoc ? (
                         <div className="card card-info">
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                                 <div>
