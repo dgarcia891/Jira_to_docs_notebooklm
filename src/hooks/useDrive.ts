@@ -25,7 +25,12 @@ export function useDrive() {
         try {
             const response = await chrome.runtime.sendMessage({ type: 'LIST_DRIVE_FOLDERS', payload: { parentId } });
             if (response && Array.isArray(response)) {
-                setFolders(response);
+                // Map folders to include suffix for UI compatibility
+                const mapped = response.map((item: any) => ({
+                    id: item.id,
+                    name: item.mimeType === 'application/vnd.google-apps.folder' ? `${item.name} (Folder)` : item.name
+                }));
+                setFolders(mapped);
             }
         } catch (e) {
             console.error('Failed to load folders:', e);
@@ -78,7 +83,16 @@ export function useDrive() {
         setIsSearching(true);
         try {
             const results = await chrome.runtime.sendMessage({ type: 'SEARCH_DOCS', payload: { query } });
-            setSearchResults(results || []);
+
+            if (results && Array.isArray(results)) {
+                const mapped = results.map((item: any) => ({
+                    id: item.id,
+                    name: item.mimeType === 'application/vnd.google-apps.folder' ? `${item.name} (Folder)` : item.name
+                }));
+                setSearchResults(mapped);
+            } else {
+                setSearchResults([]);
+            }
         } catch (e) {
             console.error('Search failed:', e);
         } finally {

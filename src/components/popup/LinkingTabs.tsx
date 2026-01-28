@@ -136,7 +136,7 @@ export function LinkingTabs({
 
                     <FolderBrowser
                         folderPath={folderPath}
-                        folders={folders}
+                        folders={searchQuery ? searchResults : folders}
                         navigateToFolder={navigateToFolder}
                         navigateUp={navigateUp}
                         selectedDocId={selectedDocId}

@@ -739,7 +739,7 @@ const socketHost = `${"localhost" || importMetaUrl.hostname}:${hmrPort || import
 const directSocketHost = "localhost:5173/";
 const base = "/" || "/";
 const hmrTimeout = 30000;
-const wsToken = "J0GqmrIWlW8b";
+const wsToken = "LThuq00ekP_R";
 const transport = normalizeModuleRunnerTransport((() => {
 	let wsTransport = createWebSocketModuleRunnerTransport({
 		createConnection: () => new HMRPort(`${socketProtocol}://${socketHost}?token=${wsToken}`, "vite-hmr"),

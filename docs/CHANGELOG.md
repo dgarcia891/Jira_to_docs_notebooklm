@@ -1,5 +1,10 @@
 # Changelog
 
+## [9.5.20] - 2026-01-28
+### Fixed
+- **Drive Search & Browse**: Unified Drive access to include both files and folders in search results and folder browsing. You can now correctly find and link documents even if they are inside folders, and navigate to folders found via search.
+
+
 ## [9.5.19] - 2026-01-28
 ### Fixed
 - **Drive Visibility**: Fixed critical bug where "Browse Folders" would show "This folder is empty" due to an API message type mismatch.

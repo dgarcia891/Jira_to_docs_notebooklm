@@ -98,9 +98,9 @@ export class DocsSyncService {
     /**
      * Searches for Google Docs by name.
      */
-    async searchDocs(token: string, query: string): Promise<{ id: string, name: string }[]> {
-        const q = `mimeType='application/vnd.google-apps.document' and name contains '${query.replace(/'/g, "\\'")}' and trashed=false`;
-        const res = await this.authFetch(`${this.driveUrl}?q=${encodeURIComponent(q)}&fields=files(id,name)&orderBy=modifiedTime desc`, {
+    async searchDocs(token: string, query: string): Promise<{ id: string, name: string, mimeType: string }[]> {
+        const q = `(mimeType='application/vnd.google-apps.document' or mimeType='application/vnd.google-apps.folder') and name contains '${query.replace(/'/g, "\\'")}' and trashed=false`;
+        const res = await this.authFetch(`${this.driveUrl}?q=${encodeURIComponent(q)}&fields=files(id,name,mimeType)&orderBy=modifiedTime desc`, {
             headers: { Authorization: `Bearer ${token}` },
         }, token);
 
@@ -116,15 +116,15 @@ export class DocsSyncService {
      * Lists folders from Drive with optional parent filtering.
      * @param parentId - 'root' for top-level, folder ID for subfolders, undefined for all
      */
-    async listFolders(token: string, parentId?: string): Promise<{ id: string, name: string }[]> {
-        let query = "mimeType='application/vnd.google-apps.folder' and trashed=false";
+    async listFolders(token: string, parentId?: string): Promise<{ id: string, name: string, mimeType: string }[]> {
+        let query = "(mimeType='application/vnd.google-apps.folder' or mimeType='application/vnd.google-apps.document') and trashed=false";
 
         if (parentId) {
             // Filter by parent folder
             query += ` and '${parentId}' in parents`;
         }
 
-        const res = await this.authFetch(`${this.driveUrl}?q=${encodeURIComponent(query)}&fields=files(id,name)&orderBy=name`, {
+        const res = await this.authFetch(`${this.driveUrl}?q=${encodeURIComponent(query)}&fields=files(id,name,mimeType)&orderBy=folder,name`, {
             headers: { Authorization: `Bearer ${token}` },
         }, token);
 
