@@ -1,1 +1,0 @@
-function a(t){return t?{id:t.id||t.docId,name:t.name}:null}function o(t){if(!t)return"N/A";try{const n=new Date(t);if(isNaN(n.getTime()))return"N/A";const r=n.toLocaleString("en-US",{year:"numeric",month:"short",day:"numeric",hour:"numeric",minute:"2-digit"}),e=n.toString().match(/\(([^)]+)\)$/),i=e?e[1]:"";return i?`${r} (${i})`:r}catch{return"N/A"}}export{o as f,a as n};

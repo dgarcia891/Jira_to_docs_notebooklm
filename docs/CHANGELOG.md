@@ -1,5 +1,9 @@
 # Changelog
 
+## [9.5.10] - 2026-01-28
+### Fixed
+- **Authentication Resilience**: Upgraded HMR client dependency to fix "Extension context invalidated" errors during development reloads.
+
 ## [9.5.9] - 2026-01-28
 ### Fixed
 - **Pending Link UI**: Added a "Cancel" button to the pending link notification, allowing users to dismiss accidental link selections.

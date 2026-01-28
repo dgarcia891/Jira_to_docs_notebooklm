@@ -1,40 +1,40 @@
 {
   "../../../../../@crx/manifest": {
-    "file": "assets/crx-manifest.js-BpU_0Tb9.js",
+    "file": "assets/crx-manifest.js-DfjEk9iZ.js",
     "name": "crx-manifest.js",
     "src": "../../../../../@crx/manifest",
     "isEntry": true
   },
-  "_content.ts-loader-D6tQsppk.js": {
-    "file": "assets/content.ts-loader-D6tQsppk.js",
-    "src": "_content.ts-loader-D6tQsppk.js"
+  "_content.ts-loader-PmueZTQw.js": {
+    "file": "assets/content.ts-loader-PmueZTQw.js",
+    "src": "_content.ts-loader-PmueZTQw.js"
   },
-  "_docUtils-CDeOq3Hw.js": {
-    "file": "assets/docUtils-CDeOq3Hw.js",
+  "_docUtils-BQsI6kcp.js": {
+    "file": "assets/docUtils-BQsI6kcp.js",
     "name": "docUtils"
   },
   "index.html": {
-    "file": "assets/index.html-DA7gHnZs.js",
+    "file": "assets/index.html-Bv-afJXO.js",
     "name": "index.html",
     "src": "index.html",
     "isEntry": true
   },
   "src/background.ts": {
-    "file": "assets/background.ts-DN_h1Cqp.js",
+    "file": "assets/background.ts-Dd99pRDn.js",
     "name": "background.ts",
     "src": "src/background.ts",
     "isEntry": true,
     "imports": [
-      "_docUtils-CDeOq3Hw.js"
+      "_docUtils-BQsI6kcp.js"
     ]
   },
   "src/content.ts": {
-    "file": "assets/content.ts-Dgcyq-z4.js",
+    "file": "assets/content.ts-BAca1kUI.js",
     "name": "content.ts",
     "src": "src/content.ts",
     "isEntry": true,
     "imports": [
-      "_docUtils-CDeOq3Hw.js"
+      "_docUtils-BQsI6kcp.js"
     ]
   }
 }
