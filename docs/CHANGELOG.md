@@ -1,4 +1,7 @@
 
+## [9.5.26] - 2026-01-29
+- Automated release build.
+
 ## [9.5.25] - 2026-01-29
 - Automated release build.
 
