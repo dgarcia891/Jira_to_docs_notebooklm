@@ -1,6 +1,6 @@
 {
   "../../../../../@crx/manifest": {
-    "file": "assets/crx-manifest.js-DfjEk9iZ.js",
+    "file": "assets/crx-manifest.js-B7QtxXp8.js",
     "name": "crx-manifest.js",
     "src": "../../../../../@crx/manifest",
     "isEntry": true
@@ -14,13 +14,16 @@
     "name": "docUtils"
   },
   "index.html": {
-    "file": "assets/index.html-Bv-afJXO.js",
+    "file": "assets/index.html-Cm1YIyq4.js",
     "name": "index.html",
     "src": "index.html",
-    "isEntry": true
+    "isEntry": true,
+    "css": [
+      "assets/index-Ch_3NDwX.css"
+    ]
   },
   "src/background.ts": {
-    "file": "assets/background.ts-Dd99pRDn.js",
+    "file": "assets/background.ts-CuMIKZsY.js",
     "name": "background.ts",
     "src": "src/background.ts",
     "isEntry": true,

@@ -27,3 +27,15 @@
 
 ### API Consistency
 - **Message Type Mismatches**: Ensure that message types sent from React hooks (e.g., `useDrive`) exactly match the types expected by `background.ts` listeners defined in `switch` statements. Using shared constants for message types is recommended to prevent typos like `LIST_FOLDERS` vs `LIST_DRIVE_FOLDERS`.
+
+## [Persistent Link UI Refresh] - 2026-01-28
+- **Problem**: UI showing stale linked document name/status after a second sync during the same session.
+- **Cause**: Banner triggered on SYNC_STATE_UPDATE, but the underlying 'linkedDoc' state in App.tsx wasn't refreshed.
+- **Solution**: Added manual call to `jiraSync.checkCurrentPageLink()` on sync success to force a state refresh.
+- **Lesson**: Don't assume background storage updates will automatically propagate to all UI state hooks; trigger an explicit refresh for critical metadata.
+
+## [Vite Dev Mode Trap] - 2026-01-28
+- **Problem**: Extension popup showed 'Cannot connect to Vite Dev Server' overlay.
+- **Cause**: Build artifacts from a previous dev session or implicit dev configuration were injecting HMR client code.
+- **Solution**: Explicitly configured `vite.config.ts` to disable HMR in production builds and force a clean build.
+- **Lesson**: Always enforce strict environment separation in build tools; HMR clients are viral in Chrome Extensions.

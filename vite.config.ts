@@ -18,6 +18,10 @@ export default defineConfig({
             port: 5173,
         },
     },
+    build: {
+        sourcemap: process.env.NODE_ENV === 'development',
+        minify: process.env.NODE_ENV !== 'development',
+    },
     test: {
         globals: true,
         environment: 'jsdom',
