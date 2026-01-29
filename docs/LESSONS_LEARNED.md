@@ -55,3 +55,8 @@
 - **Problem**: UI stuck at 'Preparing document...' despite successful doc creation.
 - **Cause**: `handleCreateAndLink` called `handleSync`, which used a stale closure value of `pendingLink` (null), causing it to abort early.
 - **Solution**: Updated `handleSync` to accept a `bypassLinkCheck` flag.
+
+## [Auth Token Refresh] - 2026-01-29
+- **Problem**: Users forced to re-login frequently (silent refresh failing).
+- **Cause**: `clearCachedToken` (called on 401) cleared local storage BEFORE telling Chrome to remove the cached token. Chrome then kept serving the invalid token.
+- **Solution**: Patched `clearCachedToken` to fetch the token from storage first if not explicitly provided.

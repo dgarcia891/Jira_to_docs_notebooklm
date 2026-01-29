@@ -116,6 +116,12 @@ export class GoogleAuthService implements AuthService {
 
     async clearCachedToken(token?: string): Promise<void> {
         console.log('GoogleAuth: Clearing cached token...');
+
+        if (!token) {
+            const data = await chrome.storage.local.get('auth_token');
+            token = data.auth_token as string | undefined;
+        }
+
         await chrome.storage.local.remove(['auth_token', 'token_expiry', 'userInfo']);
 
         if (token && typeof chrome !== 'undefined' && chrome.identity?.removeCachedAuthToken) {
