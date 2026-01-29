@@ -146,9 +146,10 @@ const App: React.FC = () => {
         };
     }, [jiraSync.currentIssueKey, jiraSync.refreshLastSync, auth.checkAuth, resumeSyncState, updateStatus, checkPendingLink]);
 
-    const handleSync = async () => {
+    const handleSync = async (bypassLinkCheck = false) => {
         // If not linked and no pending link, open linking options instead of failing
-        if (!jiraSync.linkedDoc && !pendingLink) {
+        // We skip this check if bypassLinkCheck is true (called from handleCreateAndLink)
+        if (!bypassLinkCheck && !jiraSync.linkedDoc && !pendingLink) {
             setShowLinkingOptions(true);
             return;
         }
@@ -242,7 +243,7 @@ const App: React.FC = () => {
             if (syncChildren || forceSyncChildren) {
                 await handleEpicSync();
             } else {
-                await handleSync();
+                await handleSync(true);
             }
             setShowLinkingOptions(false);
         } catch (err: any) {
@@ -257,7 +258,7 @@ const App: React.FC = () => {
         <div className="app-container">
             <header className="header">
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span className="version-badge">v9.5.26</span>
+                    <span className="version-badge">v9.5.27</span>
                     <button
                         onClick={() => jiraSync.checkCurrentPageLink()}
                         className="icon-btn"
@@ -408,7 +409,7 @@ const App: React.FC = () => {
 
                     <div style={{ display: 'flex', gap: '10px', marginBottom: '10px' }}>
                         <button
-                            onClick={handleSync}
+                            onClick={() => handleSync()}
                             disabled={isSyncing}
                             className={`btn ${(jiraSync.lastSyncType === 'single' || !jiraSync.lastSyncType) ? 'btn-primary' : 'btn-secondary'}`}
                             style={{ flex: 1 }}
