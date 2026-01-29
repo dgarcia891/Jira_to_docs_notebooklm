@@ -1,6 +1,6 @@
 {
   "../../../../../@crx/manifest": {
-    "file": "assets/crx-manifest.js-B0aBT5Tg.js",
+    "file": "assets/crx-manifest.js-DuKy_h8A.js",
     "name": "crx-manifest.js",
     "src": "../../../../../@crx/manifest",
     "isEntry": true
@@ -14,7 +14,7 @@
     "name": "docUtils"
   },
   "index.html": {
-    "file": "assets/index.html-RkZtfyb1.js",
+    "file": "assets/index.html-DRLC644N.js",
     "name": "index.html",
     "src": "index.html",
     "isEntry": true,
