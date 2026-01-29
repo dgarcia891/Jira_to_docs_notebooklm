@@ -2,7 +2,7 @@
 description: Bumps version, builds extension, and pushes to Git.
 ---
 1. Sync & Safety
-git pull --rebase origin main || echo "⚠️ No remote found, working locally."
+git pull --rebase origin feature/multi-page-sync || echo "⚠️ Remote sync failed or branch missing."
 
 2. Manifest Validation
 // turbo
@@ -10,10 +10,10 @@ if grep -q '"manifest_version": 2' src/manifest.json; then echo "❌ FAIL: Manif
 echo "✅ Manifest V3 Verified."
 
 3. Test Gate
-npm run test:unit
+npm test
 
 4. Version Bump
-node scripts/release.js
+node scripts/release.cjs
 
 5. Build
 npm run build
@@ -23,5 +23,5 @@ VERSION=$(node -p "require('./package.json').version")
 git add .
 git commit -m "chore(release): v$VERSION"
 git tag "v$VERSION"
-git push origin main --tags
+git push origin feature/multi-page-sync --tags
 echo "🚀 Deployed v$VERSION to Git."
