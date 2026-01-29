@@ -9,26 +9,27 @@ export class DocsSyncService {
      * Authenticated fetch wrapper with 401 handling and single retry.
      */
     private async authFetch(url: string, options: RequestInit, token: string): Promise<Response> {
-        let response = await fetch(url, options);
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 20000); // 20s timeout for API calls
 
-        if (response.status === 401) {
-            console.warn(`DocsSync: 401 Unauthorized for ${url}. Clearing token and retrying...`);
+        try {
+            const response = await fetch(url, { ...options, signal: controller.signal });
+            clearTimeout(timeoutId);
 
-            // We use a custom event or direct call if we had access to authService here.
-            // Since we don't want to create circular dependencies, we'll signal the background script 
-            // or use a callback. For now, let's assume we can trigger a storage clear.
-            await chrome.storage.local.remove(['auth_token', 'token_expiry']);
+            if (response.status === 401) {
+                console.warn(`DocsSync: 401 Unauthorized for ${url}. Clearing token and retrying...`);
+                await chrome.storage.local.remove(['auth_token', 'token_expiry']);
+                return response;
+            }
 
-            // Note: In a real extension, we might send a message to background to re-auth,
-            // but for a "Sync" operation already in progress, we try one silent check.
-            // If the background script is the one calling this, it can handle re-fetching.
-
-            // To be truly robust, we'd need to re-fetch the token. 
-            // Let's modify the service methods to handle the retry loop.
             return response;
+        } catch (err: any) {
+            clearTimeout(timeoutId);
+            if (err.name === 'AbortError') {
+                throw new Error(`Request timed out: ${url}`);
+            }
+            throw err;
         }
-
-        return response;
     }
 
     /**

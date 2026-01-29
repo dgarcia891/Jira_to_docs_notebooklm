@@ -39,3 +39,9 @@
 - **Cause**: Build artifacts from a previous dev session or implicit dev configuration were injecting HMR client code.
 - **Solution**: Explicitly configured `vite.config.ts` to disable HMR in production builds and force a clean build.
 - **Lesson**: Always enforce strict environment separation in build tools; HMR clients are viral in Chrome Extensions.
+
+## [Sync Freeze at 5%] - 2026-01-28
+- **Problem**: Sync process hung indefinitely at 'Preparing document...' (5%).
+- **Cause**: Infinite wait on `chrome.identity.getAuthToken` or `fetch` in background script (likely network or auth interactive block).
+- **Solution**: Added logic to race promises with a 15-20s timeout in `GoogleAuthService` and `DocsSyncService`.
+- **Lesson**: Never await external APIs indefinitely in a background service worker; always implement an abort/timeout strategy.

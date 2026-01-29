@@ -25,20 +25,25 @@ export class GoogleAuthService implements AuthService {
         console.log(`GoogleAuth: fetchToken called (interactive: ${interactive})`);
 
         // 1. Try Native getAuthToken first
-        const nativeToken = await new Promise<string | null>((resolve) => {
-            if (typeof chrome === 'undefined' || !chrome.identity || !chrome.identity.getAuthToken) {
-                resolve(null);
-                return;
-            }
-            chrome.identity.getAuthToken({ interactive }, (token: any) => {
-                if (chrome.runtime?.lastError || !token) {
-                    console.warn('GoogleAuth: Native getAuthToken failed/returned nothing:', chrome.runtime?.lastError?.message || 'No token');
+        const nativeToken = await Promise.race([
+            new Promise<string | null>((resolve) => {
+                if (typeof chrome === 'undefined' || !chrome.identity || !chrome.identity.getAuthToken) {
                     resolve(null);
-                } else {
-                    resolve(token);
+                    return;
                 }
-            });
-        });
+                chrome.identity.getAuthToken({ interactive }, (token: any) => {
+                    if (chrome.runtime?.lastError || !token) {
+                        console.warn('GoogleAuth: Native getAuthToken failed/returned nothing:', chrome.runtime?.lastError?.message || 'No token');
+                        resolve(null);
+                    } else {
+                        resolve(token);
+                    }
+                });
+            }),
+            new Promise<string | null>((_, reject) =>
+                setTimeout(() => reject(new Error('Auth timed out after 15s')), 15000)
+            )
+        ]);
 
         if (nativeToken) {
             await chrome.storage.local.set({ auth_token: nativeToken, token_expiry: Date.now() + 3000 * 1000 });
