@@ -45,3 +45,8 @@
 - **Cause**: Infinite wait on `chrome.identity.getAuthToken` or `fetch` in background script (likely network or auth interactive block).
 - **Solution**: Added logic to race promises with a 15-20s timeout in `GoogleAuthService` and `DocsSyncService`.
 - **Lesson**: Never await external APIs indefinitely in a background service worker; always implement an abort/timeout strategy.
+
+## [App.tsx Error Handling] - 2026-01-28
+- **Problem**: UI stuck at 'Preparing document...' (5%) even after background script timeout.
+- **Cause**: `handleCreateAndLink` did not check for `response.error` from `sendMessage`, and catch block did not reset `syncProgress`.
+- **Solution**: Added explicit error checks for `CREATE_DOC` and `SET_SELECTED_DOC`, and added `setSyncProgress(0)` to catch block.

@@ -157,7 +157,8 @@ const App: React.FC = () => {
         setSyncProgress(10);
         setSyncStatusText('Initializing...');
         try {
-            await chrome.runtime.sendMessage({ type: 'SYNC_CURRENT_PAGE' });
+            const response = await chrome.runtime.sendMessage({ type: 'SYNC_CURRENT_PAGE' });
+            if (response && response.error) throw new Error(response.error);
         } catch (err: any) {
             const errorMessage = err?.message || '';
             if (errorMessage.includes('context invalidated')) {
@@ -175,10 +176,11 @@ const App: React.FC = () => {
         setSyncProgress(5);
         setSyncStatusText('Starting Bulk Sync...');
         try {
-            await chrome.runtime.sendMessage({
+            const epicResponse = await chrome.runtime.sendMessage({
                 type: 'SYNC_EPIC',
                 payload: { epicKey: jiraSync.currentIssueKey }
             });
+            if (epicResponse && epicResponse.error) throw new Error(epicResponse.error);
         } catch (err: any) {
             // Error is handled by background update
         } finally {
@@ -220,10 +222,12 @@ const App: React.FC = () => {
 
             if (activeTab === 'all') { // LinkingTabs 'all' corresponds to 'create' logic
                 const folderId = drive.folderPath.length > 0 ? drive.folderPath[drive.folderPath.length - 1].id : undefined;
-                docIdToLink = await chrome.runtime.sendMessage({
+                const response = await chrome.runtime.sendMessage({
                     type: 'CREATE_DOC',
                     payload: { title: jiraSync.newDocTitle.trim(), folderId }
                 });
+                if (response && response.error) throw new Error(response.error);
+                docIdToLink = response;
                 docNameToLink = jiraSync.newDocTitle.trim();
             } else {
                 const found = drive.searchResults.find(d => d.id === drive.selectedDocId) ||
@@ -231,7 +235,8 @@ const App: React.FC = () => {
                 docNameToLink = found?.name || 'Linked Doc';
             }
 
-            await chrome.runtime.sendMessage({ type: 'SET_SELECTED_DOC', payload: { id: docIdToLink, name: docNameToLink } });
+            const setResponse = await chrome.runtime.sendMessage({ type: 'SET_SELECTED_DOC', payload: { id: docIdToLink, name: docNameToLink } });
+            if (setResponse && setResponse.error) throw new Error(setResponse.error);
             setPendingLink({ id: docIdToLink as string, name: docNameToLink });
 
             if (syncChildren || forceSyncChildren) {
@@ -243,6 +248,8 @@ const App: React.FC = () => {
         } catch (err: any) {
             updateStatus({ text: `Operation failed: ${err.message}`, type: 'error' });
             setIsSyncing(false);
+            setSyncProgress(0);
+            setSyncStatusText('');
         }
     };
 
