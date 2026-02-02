@@ -1,3 +1,48 @@
+# Changelog
+
+## [20.2.0] - 2026-02-02
+### Added
+- **Orchestrator v20.2 (Data Integrity edition)**: Transitioned from v19.2 to v20.2.
+- **Decoupled Logic Protocol (v19.3)**: Enforced separation between UI components and business logic.
+- **Data Integrity Protocol (v20.2)**: Strictly forbidden hardcoded mock data in `src/`.
+- **Mock Detector**: Automated script (`scripts/detect_mocks.js`) to guard against "Hollow Shell" implementations.
+### Changed
+- **Workflows**: Enhanced `/deploy` and `/plan` swarms with integrity gates and data tracing requirements.
+
+## [19.2.0] - 2026-01-30
+### Added
+- **Orchestrator v19.2 (Turnkey Edition)**: Complete stack injection + dependency resolution.
+- **Safety Gates**: Automated `security_scan` and `drift_check` protocols.
+- **Enforced Testing**: Integrated `jest` and `jest-chrome` into the turnkey environment.
+- **Architecture Spec**: Formalized data flow and directory structure in `docs/architecture.md`.
+### Fixed
+- **Security [BUG-SEC-01]**: Neutralized `innerHTML` usage in Jira parser using `DOMParser` to comply with Manifest V3 CSP.
+
+## [15.0.0] - 2026-01-30
+### Added
+- **Orchestrator v15.0 (Chrome Swarm Manifest)**: Major architecture upgrade.
+- **Master Manifest**: Formalized agent identity and governance in `docs/ORCHESTRATOR_MANIFEST.md`.
+- **Swarm Workflows**: Full suite of parallelized workflows (`/plan`, `/build`, `/fix`, `/deploy`, `/verify`).
+- **Memory Recall**: Integrated `scripts/consult.js` for mandatory active context audit.
+- **NAS Sync**: Automated deployment sync to NAS via `scripts/deploy.sh`.
+
+## [14.4.0] - 2026-01-30
+### Added
+- **Bug Reporter v14.4**: Injected `/bug_report` workflow for structured issue logging.
+- **Bug Log Protocol**: Initialized `docs/BUG_LOG.md` with an automated sequential tracking system.
+
+## [14.2.1] - 2026-01-30
+### Changed
+- **Workflows**: Decoupled visual verification from `/deploy`.
+- **Verify Command**: Added `/verify` for on-demand visual audits via Browser Agent.
+
+## [14.2.0] - 2026-01-30
+### Added
+- **Orchestrator v14.2 (Chrome Swarm)**: Upgraded agent identity to v14.2 with Swarm Protocol support.
+- **Chrome File Gates**: Mandatory Manifest V3 safety clamps injected into `.agent/rules/`.
+- **Swarm Workflows**: Replaced linear workflows with parallel `/build`, `/plan`, and `/deploy` swarms.
+- **Visual Audit**: Automated instruction set for Browser Agent verification in `scripts/visual_audit.js`.
+- **Safety Policy**: Formalized `GLOBAL_AGENT_RULES.md` for zero-tolerance execution control.
 
 ## [9.5.31] - 2026-01-30
 - Automated release build.
@@ -28,8 +73,6 @@
 
 ## [9.5.22] - 2026-01-29
 - Automated release build.
-# Changelog
-
 ## [9.5.21] - 2026-01-28
 ### Fixed
 - **Persistent Link UI**: Fixed bug where the "LINKED DOCUMENT" card would show stale or incorrect document info after a successful sync. Added automatic UI refresh on sync completion.
