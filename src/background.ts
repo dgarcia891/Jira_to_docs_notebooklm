@@ -445,3 +445,24 @@ chrome.runtime.onMessage.addListener((message: any) => {
         });
     }
 });
+
+// -- Proactive Auth Maintenance (v20.2.1) --
+chrome.runtime.onInstalled.addListener(() => {
+    chrome.alarms.create('proactive-auth-refresh', { periodInMinutes: 30 });
+    console.log('Background: Auth refresh alarm scheduled (every 30 mins)');
+});
+
+chrome.alarms.onAlarm.addListener(async (alarm) => {
+    if (alarm.name === 'proactive-auth-refresh') {
+        try {
+            const token = await authService.refreshNow();
+            if (token) {
+                console.log('Background: Proactive token refresh successful.');
+            } else {
+                console.warn('Background: Proactive refresh returned no token.');
+            }
+        } catch (e) {
+            console.error('Background: Proactive refresh failed:', e);
+        }
+    }
+});

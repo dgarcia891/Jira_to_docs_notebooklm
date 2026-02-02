@@ -46,7 +46,7 @@ export class GoogleAuthService implements AuthService {
         ]);
 
         if (nativeToken) {
-            await chrome.storage.local.set({ auth_token: nativeToken, token_expiry: Date.now() + 3000 * 1000 });
+            await chrome.storage.local.set({ auth_token: nativeToken, token_expiry: Date.now() + 3600 * 1000 });
             return nativeToken;
         }
 
@@ -69,7 +69,7 @@ export class GoogleAuthService implements AuthService {
                     } else {
                         const token = parseTokenFromUrl(responseUrl);
                         if (token) {
-                            chrome.storage.local.set({ auth_token: token, token_expiry: Date.now() + 3000 * 1000 });
+                            chrome.storage.local.set({ auth_token: token, token_expiry: Date.now() + 3600 * 1000 });
                         }
                         resolve(token);
                     }
@@ -112,6 +112,11 @@ export class GoogleAuthService implements AuthService {
         }
 
         return newToken;
+    }
+
+    async refreshNow(): Promise<string | null> {
+        console.log('GoogleAuth: Proactive refresh triggered.');
+        return await this.fetchToken(false);
     }
 
     async clearCachedToken(token?: string): Promise<void> {

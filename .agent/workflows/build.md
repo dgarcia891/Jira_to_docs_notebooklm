@@ -1,9 +1,20 @@
+---
 name: build
-description: Builds the extension, runs mocks, and bundles for store.
-steps:
-  - name: Test Gate
-    command: npm run test:unit # Must use jest-chrome [Source 647]
-  - name: Clean & Bundle
-    command: rm -rf dist/ && npm run build
-  - name: Pack
-    command: zip -r extension.zip dist/ manifest.json icons/
+description: Spawns Swarm (Test + Code) based on Spec.
+---
+1. Architecture Load
+   cat docs/architecture.md
+   // turbo
+
+2. Swarm Init
+   echo "🚀 Spawning Mock-Writer (tests/unit) and Builder (src/)..."
+   // turbo
+
+3. Parallel Execution
+   echo "Writing tests to tests/unit/ (using jest-chrome)..." 
+   echo "Writing code to src/..."
+   // turbo
+
+4. Verification
+   npm run test:unit
+   // turbo

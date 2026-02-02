@@ -22,7 +22,7 @@
   "content_scripts": [
     {
       "js": [
-        "assets/content.ts-loader-PmueZTQw.js"
+        "assets/content.ts-loader-Cxwp6aAw.js"
       ],
       "matches": [
         "https://*.atlassian.net/browse/*",
@@ -50,7 +50,7 @@
       ],
       "resources": [
         "assets/docUtils-BQsI6kcp.js",
-        "assets/content.ts-BAca1kUI.js"
+        "assets/content.ts-ui0ATN8_.js"
       ],
       "use_dynamic_url": false
     }

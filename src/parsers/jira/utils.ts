@@ -101,9 +101,10 @@ export function mapType(raw: string): WorkItemType {
     return 'other';
 }
 
-export function cleanCommentBody(html: string, document: Document): string {
-    const tempDiv = document.createElement('div');
-    tempDiv.innerHTML = html;
+export function cleanCommentBody(html: string, _document: Document): string {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(html, 'text/html');
+    const tempDiv = doc.body;
 
     const cards = tempDiv.querySelectorAll(
         '[data-node-type="inlineCard"], ' +
@@ -138,7 +139,7 @@ export function cleanCommentBody(html: string, document: Document): string {
             replacement = ` [Linked Link] `;
         }
 
-        const textNode = document.createTextNode(replacement);
+        const textNode = doc.createTextNode(replacement);
         card.parentNode?.replaceChild(textNode, card);
     });
 

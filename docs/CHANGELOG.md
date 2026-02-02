@@ -1,5 +1,9 @@
 # Changelog
 
+## [20.2.1] - 2026-02-02
+### Fixed
+- **Auth Persistence (BUG-AUTH-01)**: Implemented proactive background refresh every 30 minutes via `chrome.alarms` to prevent session loss.
+
 ## [20.2.0] - 2026-02-02
 ### Added
 - **Orchestrator v20.2 (Data Integrity edition)**: Transitioned from v19.2 to v20.2.
