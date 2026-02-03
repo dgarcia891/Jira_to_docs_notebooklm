@@ -1,5 +1,9 @@
 # Changelog
 
+## [20.2.2] - 2026-02-03
+### Changed
+- **Release Verification**: Verified Secure Release Pipeline v20.2 via automated deployment workflow.
+
 ## [20.2.1] - 2026-02-02
 ### Fixed
 - **Auth Persistence (BUG-AUTH-01)**: Implemented proactive background refresh every 30 minutes via `chrome.alarms` to prevent session loss.
