@@ -1,6 +1,6 @@
 {
   "name": "jira-to-notebooklm-chrome-extension",
-  "version": "20.2.4",
+  "version": "20.2.6",
   "description": "Chrome extension to sync Jira issues to Google Docs for NotebookLM",
   "main": "index.js",
   "directories": {
@@ -9,7 +9,7 @@
   "scripts": {
     "test": "vitest run",
     "dev": "vite",
-    "build": "vite build",
+    "build": "node scripts/build.cjs",
     "preview": "vite preview",
     "test:regression": "vitest src/tests/regression",
     "release": "node scripts/release.cjs",
