@@ -9,7 +9,7 @@ export type BackgroundMessage =
     | { type: 'CREATE_DOC'; payload: { title: string; folderId?: string } }
     | { type: 'GET_SELECTED_DOC' }
     | { type: 'SET_SELECTED_DOC'; payload: { docId: string; name: string } }
-    | { type: 'SYNC_CURRENT_PAGE' }
+    | { type: 'SYNC_CURRENT_PAGE'; payload?: { issueKey?: string | null } }
     | { type: 'SYNC_EPIC'; payload: { epicKey: string } }
     | { type: 'GET_ISSUE_DOC_LINK'; payload: { issueKey: string } }
     | { type: 'CLEAR_ISSUE_DOC_LINK'; payload: { issueKey: string } }

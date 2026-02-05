@@ -41,9 +41,13 @@ describe('Bug Fix: Auth Refresh Loop & 401 Retry', () => {
             token_expiry: Date.now() - 1000 // Expired
         });
 
-        // Silent refresh fails
-        mockChrome.identity.getAuthToken.mockImplementation(({ interactive }, callback) => {
-            callback(undefined);
+        // Mock Native Auth Failure
+        vi.mocked(mockChrome.identity.getAuthToken).mockImplementation((opts, cb) => {
+            if (cb) {
+                // Return failure with a FATAL error to trigger clearing
+                (mockChrome.runtime as any).lastError = { message: 'Invalid Grant' };
+                cb(undefined);
+            }
         });
 
         const token = await authService.getToken();

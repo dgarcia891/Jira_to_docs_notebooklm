@@ -88,7 +88,7 @@ export function cleanContent(text: string): string {
 }
 
 export function extractKeyFromUrl(url: string): string {
-    const match = url.match(/browse\/([A-Z]+-\d+)/);
+    const match = url.match(/(?:browse\/|selectedIssue=|issues\/)([A-Z]+-\d+)/);
     return match ? match[1] : '';
 }
 

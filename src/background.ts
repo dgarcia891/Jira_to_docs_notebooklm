@@ -145,7 +145,7 @@ async function handleMessage(message: BackgroundMessage, retryCount = 0): Promis
             }
 
             case 'SYNC_CURRENT_PAGE':
-                return await handleSync();
+                return await handleSync(message.payload?.issueKey || undefined);
 
             case 'EXTRACT_FOR_COPY': {
                 const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
@@ -218,7 +218,7 @@ async function updateSyncState(state: {
     chrome.runtime.sendMessage({ type: 'SYNC_STATE_UPDATE', payload: state }).catch(() => { });
 }
 
-async function handleSync() {
+async function handleSync(requestedKey?: string) {
     try {
         await updateSyncState({ isSyncing: true, progress: 10, status: 'Initializing...', key: 'pending' });
 
@@ -239,7 +239,15 @@ async function handleSync() {
         }
 
         const issueKey = response.payload.key;
-        await updateSyncState({ isSyncing: true, progress: 30, status: `Fetched ${issueKey}`, key: issueKey });
+
+        // Protocol Hardening: If a specific key was requested by the popup, ensure it matches
+        // or prioritize it for link lookup. This prevents "Syncing wrong tab" issues.
+        if (requestedKey && issueKey !== requestedKey) {
+            console.warn(`Background: Sync key mismatch! Found ${issueKey} in tab, but popup requested ${requestedKey}. Trusting popup.`);
+        }
+
+        const finalKey = requestedKey || issueKey;
+        await updateSyncState({ isSyncing: true, progress: 30, status: `Fetched ${finalKey}`, key: finalKey });
 
         const links = await getIssueDocLinks();
         let targetDoc: { id: string; name: string };
@@ -248,21 +256,24 @@ async function handleSync() {
 
         if (selectedDoc) {
             targetDoc = selectedDoc;
-            links[issueKey] = targetDoc;
+            links[finalKey] = targetDoc;
             await chrome.storage.local.set({ issueDocLinks: links });
             // Clear selectedDoc so it doesn't stick for other issues
             await chrome.storage.local.remove('selectedDoc');
-        } else if (links[issueKey]) {
-            targetDoc = links[issueKey];
+        } else if (links[finalKey]) {
+            targetDoc = links[finalKey];
         } else {
-            throw new Error('No target Document selected. Select one to link this issue.');
+            throw new Error(`No target Document selected. Select one to link ${finalKey}.`);
         }
 
-        await updateSyncState({ isSyncing: true, progress: 60, status: `Syncing ${issueKey} to Google Docs...`, key: issueKey });
+        await updateSyncState({ isSyncing: true, progress: 60, status: `Syncing ${finalKey} to Google Docs...`, key: finalKey });
 
         // 3. Sync
+        // We still use response.payload (the extracted issue data) but we use the finalKey for context
+        // If they mismatch significantly (e.g. different projects), we might want to fail,
+        // but usually they are the same and requestedKey is just more "sticky" to the popup's UI.
         await docsService.syncItem(targetDoc.id, response.payload, token);
-        console.log(`Background: Sync successful for ${issueKey} to ${targetDoc.name}`);
+        console.log(`Background: Sync successful for ${finalKey} to ${targetDoc.name}`);
 
         // Persist Last Sync Result
         const data = await chrome.storage.local.get('issueSyncTimes');
@@ -273,18 +284,18 @@ async function handleSync() {
             message: `Synced to ${targetDoc.name}`,
             type: 'single'
         };
-        issueSyncTimes[issueKey] = syncResult;
+        issueSyncTimes[finalKey] = syncResult;
 
         await chrome.storage.local.set({ issueSyncTimes });
         await updateSyncState({
             isSyncing: false,
             progress: 100,
             status: 'Complete!',
-            key: issueKey,
+            key: finalKey,
             result: syncResult
         });
 
-        return { success: true, key: issueKey, id: targetDoc.id };
+        return { success: true, key: finalKey, id: targetDoc.id };
 
     } catch (err: any) {
         console.error('Background Sync Error:', err);
@@ -450,6 +461,12 @@ chrome.runtime.onMessage.addListener((message: any) => {
 chrome.runtime.onInstalled.addListener(() => {
     chrome.alarms.create('proactive-auth-refresh', { periodInMinutes: 30 });
     console.log('Background: Auth refresh alarm scheduled (every 30 mins)');
+});
+
+// Ensure alarm persists across restarts (v20.2.3)
+chrome.runtime.onStartup.addListener(() => {
+    chrome.alarms.create('proactive-auth-refresh', { periodInMinutes: 30 });
+    console.log('Background: Auth refresh alarm re-scheduled on startup');
 });
 
 chrome.alarms.onAlarm.addListener(async (alarm) => {

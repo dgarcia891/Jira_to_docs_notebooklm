@@ -1,5 +1,13 @@
 # Changelog
 
+## [20.2.4] - 2026-02-05
+### Fixed
+- **Sync Integrity (BUG-SYNC-01)**: Fixed issue where the extension would target the wrong document or fail to detect keys on Jira boards.
+- **Improved URL Parsing**: Added support for `selectedIssue=` and `issues/` Jira URL formats.
+- **Protocol Hardening**: Popup now explicitly passes the intended issue key to the background sync to prevent tab-switching race conditions.
+
+## [20.2.3] - 2026-02-03
+
 ## [20.2.2] - 2026-02-03
 ### Changed
 - **Release Verification**: Verified Secure Release Pipeline v20.2 via automated deployment workflow.

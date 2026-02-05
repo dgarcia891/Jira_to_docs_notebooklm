@@ -21,39 +21,40 @@ export class GoogleAuthService implements AuthService {
     // Fallback Client ID (Web Application type) - Used only if native auth fails
     private clientId = '342225464153-i3qd0aru6fsna13sg2i0qmvtofnktgmb.apps.googleusercontent.com';
 
-    private async fetchToken(interactive: boolean): Promise<string | null> {
+    private async fetchToken(interactive: boolean): Promise<{ token: string | null; error?: string }> {
         console.log(`GoogleAuth: fetchToken called (interactive: ${interactive})`);
 
         // 1. Try Native getAuthToken first
         const nativeToken = await Promise.race([
-            new Promise<string | null>((resolve) => {
+            new Promise<{ token: string | null; error?: string }>((resolve) => {
                 if (typeof chrome === 'undefined' || !chrome.identity || !chrome.identity.getAuthToken) {
-                    resolve(null);
+                    resolve({ token: null, error: 'Identity API unavailable' });
                     return;
                 }
                 chrome.identity.getAuthToken({ interactive }, (token: any) => {
                     if (chrome.runtime?.lastError || !token) {
-                        console.warn('GoogleAuth: Native getAuthToken failed/returned nothing:', chrome.runtime?.lastError?.message || 'No token');
-                        resolve(null);
+                        const errorMsg = chrome.runtime?.lastError?.message || 'No token';
+                        console.warn('GoogleAuth: Native getAuthToken failed:', errorMsg);
+                        resolve({ token: null, error: errorMsg });
                     } else {
-                        resolve(token);
+                        resolve({ token, error: undefined });
                     }
                 });
             }),
-            new Promise<string | null>((_, reject) =>
-                setTimeout(() => reject(new Error('Auth timed out after 15s')), 15000)
+            new Promise<{ token: string | null; error?: string }>((resolve) =>
+                setTimeout(() => resolve({ token: null, error: 'Timeout' }), 15000)
             )
         ]);
 
-        if (nativeToken) {
-            await chrome.storage.local.set({ auth_token: nativeToken, token_expiry: Date.now() + 3600 * 1000 });
+        if (nativeToken.token) {
+            await chrome.storage.local.set({ auth_token: nativeToken.token, token_expiry: Date.now() + 3600 * 1000 });
             return nativeToken;
         }
 
         // 2. Fallback to launchWebAuthFlow if interactive AND native failed
         if (interactive) {
             console.log('GoogleAuth: Attempting Fallback launchWebAuthFlow...');
-            return new Promise((resolve) => {
+            return new Promise<{ token: string | null; error?: string }>((resolve) => {
                 const redirectUri = chrome.identity.getRedirectURL();
                 const authUrl = `https://accounts.google.com/o/oauth2/auth` +
                     `?client_id=${this.clientId}` +
@@ -65,28 +66,29 @@ export class GoogleAuthService implements AuthService {
                 chrome.identity.launchWebAuthFlow({ url: authUrl, interactive: true }, (responseUrl) => {
                     if (chrome.runtime?.lastError || !responseUrl) {
                         console.error('GoogleAuth: Fallback Auth Failed:', chrome.runtime?.lastError?.message);
-                        resolve(null);
+                        resolve({ token: null, error: chrome.runtime?.lastError?.message || 'No response URL' });
                     } else {
                         const token = parseTokenFromUrl(responseUrl);
                         if (token) {
                             chrome.storage.local.set({ auth_token: token, token_expiry: Date.now() + 3600 * 1000 });
+                            resolve({ token, error: undefined });
+                        } else {
+                            resolve({ token: null, error: 'Failed to parse token from URL' });
                         }
-                        resolve(token);
                     }
                 });
             });
         }
 
-        return null;
+        return { token: null, error: nativeToken.error };
     }
 
     async login(): Promise<string> {
-        const token = await this.fetchToken(true);
-        if (!token) {
-            const lastError = (chrome.runtime as any)?.lastError?.message;
-            throw new Error(`Authentication failed: ${lastError || 'No token returned'}`);
+        const result = await this.fetchToken(true);
+        if (!result.token) {
+            throw new Error(`Authentication failed: ${result.error || 'No token returned'}`);
         }
-        return token;
+        return result.token;
     }
 
     async getToken(): Promise<string | null> {
@@ -103,20 +105,29 @@ export class GoogleAuthService implements AuthService {
 
         // 2. Local token missing or expired, try silent refresh via Native Auth
         console.log('GoogleAuth: Storage token missing/expired. Attempting silent fetch...');
-        const newToken = await this.fetchToken(false);
+        const result = await this.fetchToken(false);
 
-        if (!newToken && token) {
-            // If silent refresh failed but we had an old token, clear it to prevent 401 loops
-            console.warn('GoogleAuth: Silent refresh failed. Clearing stale token.');
-            await this.clearCachedToken(token);
+        if (!result.token && token) {
+            // Check if error is FATAL before clearing cache
+            const error = (result.error || '').toLowerCase();
+            const fatalErrors = ['invalid', 'unauthorized', 'revoked', 'user not signed in', 'not signed in'];
+            const isFatal = fatalErrors.some(e => error.includes(e));
+
+            if (isFatal) {
+                console.warn(`GoogleAuth: Fatal auth error (${result.error}). Clearing stale token.`);
+                await this.clearCachedToken(token);
+            } else {
+                console.warn(`GoogleAuth: Transient auth error (${result.error}). Preserving stale token.`);
+            }
         }
 
-        return newToken;
+        return result.token;
     }
 
     async refreshNow(): Promise<string | null> {
         console.log('GoogleAuth: Proactive refresh triggered.');
-        return await this.fetchToken(false);
+        const result = await this.fetchToken(false);
+        return result.token;
     }
 
     async clearCachedToken(token?: string): Promise<void> {

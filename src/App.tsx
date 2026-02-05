@@ -158,7 +158,10 @@ const App: React.FC = () => {
         setSyncProgress(10);
         setSyncStatusText('Initializing...');
         try {
-            const response = await chrome.runtime.sendMessage({ type: 'SYNC_CURRENT_PAGE' });
+            const response = await chrome.runtime.sendMessage({
+                type: 'SYNC_CURRENT_PAGE',
+                payload: { issueKey: jiraSync.currentIssueKey }
+            });
             if (response && response.error) throw new Error(response.error);
         } catch (err: any) {
             const errorMessage = err?.message || '';
@@ -258,7 +261,7 @@ const App: React.FC = () => {
         <div className="app-container">
             <header className="header">
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span className="version-badge">v20.2.2</span>
+                    <span className="version-badge">v20.2.4</span>
                     <button
                         onClick={() => jiraSync.checkCurrentPageLink()}
                         className="icon-btn"
