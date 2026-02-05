@@ -1,6 +1,6 @@
 # Changelog
 
-## [20.2.4] - 2026-02-05
+## [9.5.32] / [20.2.4] - 2026-02-05
 ### Fixed
 - **Sync Integrity (BUG-SYNC-01)**: Fixed issue where the extension would target the wrong document or fail to detect keys on Jira boards.
 - **Improved URL Parsing**: Added support for `selectedIssue=` and `issues/` Jira URL formats.
