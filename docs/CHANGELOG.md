@@ -1,5 +1,13 @@
 # Changelog
 
+## [20.2.8] - 2026-02-06
+### Added
+- **Deployment**: Automated release build.
+
+## [20.2.7] - 2026-02-06
+### Fixed
+- **Auth Loop (BUG-AUTH-04)**: Fixed a logic flaw where proactive refresh was receiving the same expiring token from Chrome's cache. The extension now strictly purges the cached token before requesting a renewal.
+
 ## [20.2.6] - 2026-02-05
 ### Fixed
 - **Persistent Auth (BUG-AUTH-03)**: Resolved issue causing frequent re-logins by aligning Client IDs between Manifest and Auth service.
