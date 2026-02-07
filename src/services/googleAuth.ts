@@ -19,7 +19,8 @@ export class GoogleAuthService implements AuthService {
     ];
 
     // Fallback Client ID (Web Application type) - Used only if native auth fails
-    private clientId = '342225464153-i3qd0aru6fsna13sg2i0qmvtofnktgmb.apps.googleusercontent.com';
+    // Fallback Client ID (Web Application type) - MUST match manifest.json
+    private clientId = '342225464153-dla0epo4rhkt8tlst7jeorqos3n1d1rf.apps.googleusercontent.com';
 
     private async fetchToken(interactive: boolean): Promise<{ token: string | null; error?: string }> {
         console.log(`GoogleAuth: fetchToken called (interactive: ${interactive})`);
@@ -110,7 +111,7 @@ export class GoogleAuthService implements AuthService {
         if (!result.token && token) {
             // Check if error is FATAL before clearing cache
             const error = (result.error || '').toLowerCase();
-            const fatalErrors = ['invalid', 'unauthorized', 'revoked', 'user not signed in', 'not signed in'];
+            const fatalErrors = ['invalid', 'unauthorized', 'revoked'];
             const isFatal = fatalErrors.some(e => error.includes(e));
 
             if (isFatal) {
@@ -126,6 +127,19 @@ export class GoogleAuthService implements AuthService {
 
     async refreshNow(): Promise<string | null> {
         console.log('GoogleAuth: Proactive refresh triggered.');
+
+        // BUG-AUTH-04 FIX: Force cache invalidation to prevent getting the same dying token
+        try {
+            // Get raw token from storage to avoid getToken()'s auto-refresh side effects
+            const data = await chrome.storage.local.get('auth_token');
+            const currentToken = data.auth_token as string | undefined;
+            if (currentToken) {
+                await this.clearCachedToken(currentToken);
+            }
+        } catch (e) {
+            console.warn('GoogleAuth: Failed to clear cache before refresh:', e);
+        }
+
         const result = await this.fetchToken(false);
         return result.token;
     }

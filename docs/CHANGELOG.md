@@ -1,5 +1,9 @@
 # Changelog
 
+## [20.2.9] - 2026-02-06
+### Fixed
+- **Auth Resilience (BUG-AUTH-05)**: Implemented an **Exponential Backoff Retry Strategy** for the proactive auth refresh. If the background refresh fails (e.g., due to network issues), it now retries after 1m, 2m, and 4m before giving up, ensuring session persistence.
+
 ## [20.2.8] - 2026-02-06
 ### Added
 - **Deployment**: Automated release build.

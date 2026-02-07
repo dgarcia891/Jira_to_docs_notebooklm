@@ -8,36 +8,7 @@ const jiraParser = new JiraParser();
 
 console.log('Jira to NotebookLM: Background service worker loaded');
 
-// -- Hardened Fail-safe for non-Chrome browsers (like Comet) --
-const captureToken = async (urlString: string, tabId: number) => {
-    // We look for the redirect domain and the presence of an access_token
-    if (urlString.includes('.chromiumapp.org/') && urlString.includes('access_token=')) {
-        console.log('Background: Intercepted Token URL:', urlString);
-
-        try {
-            // URLSearchParams doesn't like #, so we treat the whole thing as a query string
-            const cleanUrl = urlString.replace('#', '?');
-            const url = new URL(cleanUrl);
-            const token = url.searchParams.get('access_token');
-            const expires_in = url.searchParams.get('expires_in');
-
-            if (token) {
-                const token_expiry = Date.now() + (parseInt(expires_in || '3599') * 1000);
-                await chrome.storage.local.set({ auth_token: token, token_expiry });
-
-                console.log('Background: Auth successful. Notifying popup and closing tab.');
-                chrome.runtime.sendMessage({ type: 'AUTH_SUCCESS' }).catch(() => { });
-
-                // Wait a tiny bit to ensure storage is committed before closing
-                setTimeout(() => {
-                    chrome.tabs.remove(tabId).catch(() => { });
-                }, 100);
-            }
-        } catch (e) {
-            console.error('Background: Token extraction error:', e);
-        }
-    }
-};
+import { captureToken } from './services/tokenCapture';
 
 // 1. Monitor Tab Updates (standard)
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
@@ -469,17 +440,56 @@ chrome.runtime.onStartup.addListener(() => {
     console.log('Background: Auth refresh alarm re-scheduled on startup');
 });
 
+// Retries state
+let refresh_retry_count = 0;
+
 chrome.alarms.onAlarm.addListener(async (alarm) => {
     if (alarm.name === 'proactive-auth-refresh') {
+        console.log('Background: Proactive auth refresh alarm firing...');
         try {
             const token = await authService.refreshNow();
             if (token) {
                 console.log('Background: Proactive token refresh successful.');
+                refresh_retry_count = 0; // Reset on success
             } else {
-                console.warn('Background: Proactive refresh returned no token.');
+                console.warn('Background: Proactive refresh returned no token. Scheduling retry.');
+                scheduleRetry();
             }
         } catch (e) {
             console.error('Background: Proactive refresh failed:', e);
+            scheduleRetry();
+        }
+    } else if (alarm.name === 'proactive-auth-retry') {
+        console.log(`Background: Auth retry attempt #${refresh_retry_count + 1} firing...`);
+        try {
+            const token = await authService.refreshNow();
+            if (token) {
+                console.log('Background: Auth retry successful. Clearing retry state.');
+                refresh_retry_count = 0;
+            } else {
+                handleRetryFailure();
+            }
+        } catch (e) {
+            console.error('Background: Auth retry failed:', e);
+            handleRetryFailure();
         }
     }
 });
+
+function scheduleRetry() {
+    refresh_retry_count = 1;
+    chrome.alarms.create('proactive-auth-retry', { delayInMinutes: 1 });
+}
+
+function handleRetryFailure() {
+    refresh_retry_count++;
+    if (refresh_retry_count > 3) {
+        console.error('Background: Auth retry failed 3 times. Giving up until next cycle.');
+        refresh_retry_count = 0;
+        return;
+    }
+
+    const backoffMinutes = Math.pow(2, refresh_retry_count - 1); // 2^1=2, 2^2=4
+    console.warn(`Background: Scheduling next retry in ${backoffMinutes} minutes (Attempt ${refresh_retry_count + 1})`);
+    chrome.alarms.create('proactive-auth-retry', { delayInMinutes: backoffMinutes });
+}

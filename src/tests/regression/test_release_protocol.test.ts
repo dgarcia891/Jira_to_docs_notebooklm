@@ -13,7 +13,8 @@ describe('Release Protocol Integrity', () => {
         }
 
         expect(report.isConsistent).toBe(true);
-        expect(report.manifestVersion).toBe(report.appVersion);
+        expect(report.packageVersion).toBe(report.manifestVersion);
+        expect(report.packageVersion).toBe(report.appVersion);
     });
 
     it('should have a corresponding entry in CHANGELOG.md for the current version', () => {
